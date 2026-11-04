@@ -1,0 +1,69 @@
+# Run the whole app on any PC with Docker:
+#   1. cp .env.docker.example .env      (then set AUTH_SECRET and the admin password)
+#   2. docker compose up -d --build
+#   3. open http://localhost:3000
+# Settings come from .env; anything missing falls back to the defaults below.
+
+name: avi-infotech
+
+services:
+  mongo:
+    image: mongo:${MONGO_VERSION:-7}
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    # Uncomment to reach the database from the host (e.g. MongoDB Compass):
+    # ports:
+    #   - "27017:27017"
+
+  # One-off job: creates/updates database indexes and the first admin, then exits.
+  # Safe to run on every start.
+  setup:
+    build:
+      context: .
+      target: builder
+    image: avi-infotech-setup
+    command: ["npm", "run", "setup"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/aviinfotech}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      target: runner
+    image: avi-infotech
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/aviinfotech}
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env (openssl rand -hex 32)}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+
+volumes:
+  mongo-data:
+  uploads:
