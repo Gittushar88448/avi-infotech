@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!isId(id)) return fail("Product not found", 404);
   const parsed = await parseJson(req, StockInput);
   if ("error" in parsed) return parsed.error;
-  const { change, reason, note } = parsed.data;
+  const { change, reason, note, purchaseBillId } = parsed.data;
   // A correction may take stock below zero if the count was wrong; other removals may not.
-  return handle(async () => ok({ stock: await changeStock(id, change, reason, { by: s.uid, note, allowNegative: reason === "ADJUSTMENT" }) }));
+  return handle(async () => ok({ stock: await changeStock(id, change, reason, { by: s.uid, note, purchaseBillId: reason === "RESTOCK" && purchaseBillId ? purchaseBillId : undefined, allowNegative: reason === "ADJUSTMENT" }) }));
 }

@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { MOVEMENT_REASONS } from "./models";
 import { PAYMENT_MODES, toPaise } from "./money";
-import { BILL_TYPES, DETAIL_FIELDS, SECTIONS, type SectionKey } from "./bill-format";
+import { BILL_TYPES, DETAIL_FIELDS, PURCHASE_TYPES, SECTIONS, parsePurchaseType, type SectionKey } from "./bill-format";
 
 const rupees = (label: string) =>
   z.coerce.number({ invalid_type_error: `${label} must be a number` }).min(0, `${label} can't be negative`).max(10_000_000).transform(toPaise);
@@ -23,19 +23,35 @@ export const ProductInput = z
     price: rupees("Selling price").optional(),
     costPrice: rupees("Cost price").optional().default(0),
     gstRate: z.coerce.number().min(0).max(28).default(18),
+    purchaseType: z.preprocess(parsePurchaseType, z.enum(PURCHASE_TYPES, { errorMap: () => ({ message: "Purchase type is GST or Local" }) }).default("GST")),
     lowStockAt: wholeNumber("Low stock alert").default(3),
     warrantyMonths: wholeNumber("Warranty").default(0),
   })
   .transform((p) => ({ ...p, price: p.price || p.mrp }))
   .refine((p) => p.price <= p.mrp, { message: "Selling price can't be more than the MRP", path: ["price"] });
 
-export const NewProductInput = z.intersection(ProductInput, z.object({ openingStock: wholeNumber("Opening stock").default(0) }));
+const billId = z.union([z.literal(""), z.string().regex(/^[a-f\d]{24}$/i, "Unknown purchase bill")]).optional().default("");
+export const NewProductInput = z.intersection(ProductInput, z.object({ openingStock: wholeNumber("Opening stock").default(0), purchaseBillId: billId }));
 
 export const StockInput = z.object({
   change: z.coerce.number().int("Quantity must be a whole number").refine((n) => n !== 0, "Enter a quantity").refine((n) => Math.abs(n) <= 100_000, "That quantity is too large"),
   reason: z.enum(MOVEMENT_REASONS).refine((r) => r !== "SALE" && r !== "SALE_CANCELLED", "Sales change stock automatically"),
   note: optionalText(300),
+  purchaseBillId: billId,
 });
+
+/** Text fields of a purchase bill upload (sent as multipart form data along with the files). */
+export const PurchaseBillInput = z
+  .object({
+    billType: z.preprocess(parsePurchaseType, z.enum(PURCHASE_TYPES, { errorMap: () => ({ message: "Choose Normal bill or GST bill" }) })),
+    supplier: optionalText(120),
+    billNo: optionalText(60),
+    billDate: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Bill date looks wrong")]).optional().default(""),
+    amount: z.union([z.literal(""), rupees("Bill amount")]).optional().default(""),
+    notes: optionalText(500),
+  })
+  .transform((b) => ({ ...b, amount: b.amount === "" ? 0 : b.amount, billDate: b.billDate ? new Date(`${b.billDate}T00:00:00`) : undefined }));
+export type PurchaseBillData = z.infer<typeof PurchaseBillInput>;
 
 export const CustomerInput = z.object({
   name: z.string().trim().min(1, "Customer name is required").max(120),

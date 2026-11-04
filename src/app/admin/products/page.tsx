@@ -4,11 +4,18 @@ import { Product } from "@/lib/store/models";
 import { listCategories, productDTO, searchProducts } from "@/lib/store/products";
 import { formatINR, formatINRShort } from "@/lib/store/money";
 import { CountUp, HoverLetters } from "@/components/fancy-text";
-import { StockBadge } from "@/components/store-ui";
-import { AddProduct, StockButton } from "./products-client";
+import { PurchaseBadge, StockBadge } from "@/components/store-ui";
+import { parsePurchaseType } from "@/lib/store/bill-format";
+import { AddProduct, ScanToAdd, StockButton } from "./products-client";
 
 export const metadata = { title: "Products & stock" };
 export const dynamic = "force-dynamic";
+
+const PURCHASE_FILTERS = [
+  { v: "", l: "All bills" },
+  { v: "GST", l: "GST bill" },
+  { v: "LOCAL", l: "Normal bill" },
+] as const;
 
 const STOCK_FILTERS = [
   { v: "all", l: "All" },
@@ -17,19 +24,21 @@ const STOCK_FILTERS = [
   { v: "hidden", l: "Hidden" },
 ] as const;
 
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ q?: string; cat?: string; stock?: string }> }) {
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ q?: string; cat?: string; stock?: string; pt?: string }> }) {
   const sp = await searchParams;
   const q = sp.q?.trim() ?? "";
   const stock = STOCK_FILTERS.some((f) => f.v === sp.stock) ? sp.stock! : "all";
   const cat = sp.cat ?? "";
+  const parsedPt = parsePurchaseType(sp.pt);
+  const pt = parsedPt === "GST" || parsedPt === "LOCAL" ? parsedPt : "";
 
   const [categories, rows, agg] = await Promise.all([
     listCategories(),
     stock === "hidden"
-      ? Product.find({ active: false }).sort({ name: 1 }).populate<{ category: { name: string } }>("category", "name").lean()
-      : searchProducts(q, { categoryId: cat, stock: stock === "low" || stock === "out" ? stock : undefined }),
+      ? Product.find({ active: false, ...(pt === "LOCAL" ? { purchaseType: "LOCAL" } : pt === "GST" ? { purchaseType: { $ne: "LOCAL" } } : {}) }).sort({ name: 1 }).populate<{ category: { name: string } }>("category", "name").lean()
+      : searchProducts(q, { categoryId: cat, purchaseType: pt || undefined, stock: stock === "low" || stock === "out" ? stock : undefined }),
     Product.aggregate<{ products: number; units: number; value: number; cost: number; low: number; out: number }>([
-      { $match: { active: true } },
+      { $match: { active: true, ...(pt === "LOCAL" ? { purchaseType: "LOCAL" } : pt === "GST" ? { purchaseType: { $ne: "LOCAL" } } : {}) } },
       {
         $group: {
           _id: null,
@@ -46,7 +55,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const products = rows.map(productDTO);
   const s = agg[0] ?? { products: 0, units: 0, value: 0, cost: 0, low: 0, out: 0 };
   const href = (patch: Record<string, string>) => {
-    const p = new URLSearchParams({ ...(q && { q }), ...(cat && { cat }), ...(stock !== "all" && { stock }), ...patch });
+    const p = new URLSearchParams({ ...(q && { q }), ...(cat && { cat }), ...(pt && { pt }), ...(stock !== "all" && { stock }), ...patch });
     for (const [k, v] of [...p]) if (!v || v === "all") p.delete(k);
     return `/admin/products${p.size ? `?${p}` : ""}`;
   };
@@ -67,6 +76,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         </div>
         <div className="row wrap">
           <Link href="/admin/products/import" className="btn"><FileUp /> Import CSV</Link>
+          <ScanToAdd categories={categories.map((c) => c.name)} />
           <AddProduct categories={categories.map((c) => c.name)} />
         </div>
       </div>
@@ -92,8 +102,14 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             </Link>
           ))}
         </nav>
+        <nav className="tabs" aria-label="Purchase type">
+          {PURCHASE_FILTERS.map((f) => (
+            <Link key={f.v} href={href({ pt: f.v })} className="tab" data-active={pt === f.v}>{f.l}</Link>
+          ))}
+        </nav>
         <form className="row wrap" style={{ "--gap": "8px" } as React.CSSProperties}>
           {stock !== "all" && <input type="hidden" name="stock" value={stock} />}
+          {pt && <input type="hidden" name="pt" value={pt} />}
           <select name="cat" defaultValue={cat} className="select" style={{ height: 42, width: 190 }} aria-label="Category">
             <option value="">All categories</option>
             {categories.map((c) => <option key={String(c._id)} value={String(c._id)}>{c.name}</option>)}
@@ -109,8 +125,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       {products.length === 0 ? (
         <div className="card empty">
           <div className="empty-icon"><PackageX /></div>
-          <strong style={{ color: "var(--text)" }}>{q || cat || stock !== "all" ? "Nothing matches that filter" : "No products yet"}</strong>
-          <span>Click Add product, or just scan a box with the barcode scanner on this page.</span>
+          <strong style={{ color: "var(--text)" }}>{q || cat || pt || stock !== "all" ? "Nothing matches that filter" : "No products yet"}</strong>
+          <span>Click Add by barcode or Add product, or just scan a box with the barcode scanner on this page.</span>
         </div>
       ) : (
         <div className="list table-wrap">
@@ -120,6 +136,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 <th>Product</th>
                 <th className="hide-sm">Code</th>
                 <th className="hide-sm">Category</th>
+                <th className="hide-sm">Bought with</th>
                 <th className="num">MRP</th>
                 <th className="num hide-sm">Selling</th>
                 <th>Stock</th>
@@ -137,12 +154,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                   </td>
                   <td className="hide-sm mono" style={{ fontSize: 13 }}>{p.barcode || <span className="muted">{p.sku}</span>}</td>
                   <td className="hide-sm text-2">{p.category}</td>
+                  <td className="hide-sm"><PurchaseBadge type={p.purchaseType} /></td>
                   <td className="num">{formatINR(p.mrp)}</td>
                   <td className="num hide-sm">{formatINR(p.price)}</td>
                   <td><StockBadge stock={p.stock} low={p.lowStockAt} unit={p.unit} /></td>
                   <td className="hide-sm">
                     <div className="row" style={{ "--gap": "6px", justifyContent: "flex-end" } as React.CSSProperties}>
-                      {p.active && <StockButton id={p.id} name={p.name} stock={p.stock} unit={p.unit} className="btn btn-sm btn-ghost" />}
+                      {p.active && <StockButton id={p.id} name={p.name} stock={p.stock} unit={p.unit} purchaseType={p.purchaseType} className="btn btn-sm btn-ghost" />}
                       <Link href={`/admin/products/${p.id}`} className="icon-btn" aria-label="Open"><ChevronRight /></Link>
                     </div>
                   </td>

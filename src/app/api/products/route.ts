@@ -2,6 +2,7 @@ import { apiSession } from "@/lib/auth";
 import { fail, ok, parseJson } from "@/lib/api";
 import { handle } from "@/lib/store/errors";
 import { NewProductInput } from "@/lib/store/schemas";
+import { parsePurchaseType } from "@/lib/store/bill-format";
 import { createProduct, findByCode, productDTO, searchProducts } from "@/lib/store/products";
 
 /**
@@ -11,7 +12,7 @@ import { createProduct, findByCode, productDTO, searchProducts } from "@/lib/sto
 export async function GET(req: Request) {
   if (!(await apiSession("ADMIN"))) return fail("Unauthorized", 401);
   const sp = new URL(req.url).searchParams;
-  const products = await searchProducts(sp.get("q") ?? "", { limit: sp.get("all") ? 1000 : 20, categoryId: sp.get("cat") ?? undefined });
+  const products = await searchProducts(sp.get("q") ?? "", { limit: sp.get("all") ? 1000 : 20, categoryId: sp.get("cat") ?? undefined, purchaseType: parsePurchaseType(sp.get("pt")) });
   return ok({ items: products.map(productDTO) });
 }
 

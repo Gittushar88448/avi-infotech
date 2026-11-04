@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { AlertCircle, Barcode, IndianRupee, Save } from "lucide-react";
 import { GST_RATES, toRupees } from "@/lib/store/money";
+import { PURCHASE_TYPES, PURCHASE_LABEL, type PurchaseType } from "@/lib/store/bill-format";
+import { PurchaseBillFields, emptyBill, savePurchaseBill, type BillDraft } from "./purchase-bill-fields";
 import type { ProductDTO } from "@/lib/store/products";
 
 const UNITS = ["pcs", "set", "box", "roll", "m", "kit"];
@@ -19,7 +21,16 @@ export function ProductFormDialog({
   onClose,
   onSaved,
   fromBilling = false,
+  defaultPurchaseType = "GST",
+  defaultBill,
+  onBillSaved,
 }: {
+  /** Purchase bill to start with (e.g. the bill of an Add-by-barcode session). */
+  defaultBill?: BillDraft;
+  /** Called with the id when this form saves a new purchase bill. */
+  onBillSaved?: (id: string) => void;
+  /** Pre-selected purchase type for a new product. */
+  defaultPurchaseType?: PurchaseType;
   /** Opened from the billing screen: the stock field is called Quantity there. */
   fromBilling?: boolean;
   product?: ProductDTO;
@@ -31,13 +42,33 @@ export function ProductFormDialog({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const editing = !!product;
+  const [bill, setBill] = useState<BillDraft>(() => defaultBill ?? emptyBill(defaultPurchaseType));
+  // A bill saved on an earlier attempt that then failed (e.g. duplicate barcode) is reused, not saved twice.
+  const [savedBillId, setSavedBillId] = useState<string | null>(null);
   const r = (p?: number) => (p === undefined ? "" : String(toRupees(p)));
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
     setError("");
-    const body = Object.fromEntries(new FormData(e.currentTarget));
+    const body: Record<string, unknown> = Object.fromEntries(new FormData(e.currentTarget));
+    if (!editing) {
+      let billId = savedBillId;
+      if (!billId) {
+        const saved = await savePurchaseBill(bill);
+        if (saved.error) {
+          setBusy(false);
+          return setError(saved.error);
+        }
+        billId = saved.id;
+        if (bill.mode === "new" && billId) {
+          setSavedBillId(billId);
+          onBillSaved?.(billId);
+        }
+      }
+      body.purchaseType = bill.billType;
+      body.purchaseBillId = billId ?? "";
+    }
     const res = await fetch(editing ? `/api/products/${product.id}` : "/api/products", {
       method: editing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
@@ -99,6 +130,18 @@ export function ProductFormDialog({
             <div className="input-wrap"><IndianRupee className="icon-left" /><input id="p-cost" name="costPrice" type="number" min="0" step="0.01" className="input" defaultValue={r(product?.costPrice)} /></div>
           </div>
         </div>
+        {editing && <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
+          <legend className="label">Bought on a</legend>
+          <div className="tabs" role="radiogroup" style={{ flexWrap: "wrap" }}>
+            {PURCHASE_TYPES.map((t) => (
+              <label key={t} className="tab" style={{ cursor: "pointer" }} data-active={undefined}>
+                <input type="radio" name="purchaseType" value={t} defaultChecked={(product?.purchaseType ?? defaultPurchaseType) === t} style={{ marginRight: 6 }} />
+                {PURCHASE_LABEL[t]}
+              </label>
+            ))}
+          </div>
+          <span className="hint">GST bill: the supplier gave a GST bill. Normal bill: bought on a bill without GST. Billing warns if you put a normal-bill item on a GST Bill.</span>
+        </fieldset>}
         <div className="grid-3">
           <div className="field">
             <label className="label" htmlFor="p-gst">GST (included in price)</label>
@@ -130,6 +173,12 @@ export function ProductFormDialog({
             <input id="p-low" name="lowStockAt" type="number" min="0" step="1" className="input" defaultValue={product?.lowStockAt ?? 3} />
           </div>
         </div>
+        {!editing && (
+          <>
+            <PurchaseBillFields value={bill} onChange={(d) => { setBill(d); setSavedBillId(null); }} title="Purchase bill (Normal or GST)" />
+            {savedBillId && <span className="hint">The purchase bill is saved. Fix the error above and save again.</span>}
+          </>
+        )}
         <div className="field">
           <label className="label" htmlFor="p-desc">Notes <span className="muted">(optional)</span></label>
           <textarea id="p-desc" name="description" className="textarea" style={{ minHeight: 70 }} defaultValue={product?.description} placeholder="Specs, supplier, shelf location..." />

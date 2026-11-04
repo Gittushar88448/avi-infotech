@@ -10,6 +10,7 @@ import { billTotals, lineAmounts } from "@/lib/store/billing";
 import { PAYMENT_LABEL, PAYMENT_MODES, formatINR, toPaise, toRupees, type PaymentMode } from "@/lib/store/money";
 import type { ProductDTO } from "@/lib/store/products";
 import type { BillSettingsDTO } from "@/lib/store/bill-settings";
+import { PurchaseBadge } from "@/components/store-ui";
 import { DETAIL_FIELDS, STATES, stateByCode, stateFromGstin, type BillType, type DetailKey } from "@/lib/store/bill-format";
 import { BillSettingsForm } from "@/components/bill-settings-form";
 import { ProductPicker } from "./product-picker";
@@ -58,6 +59,20 @@ export function PointOfSale({ categories, billSettings, startCustomer }: { categ
   const seller = settings.seller;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // How the items on this bill were bought. Local-purchase items shouldn't go on a GST Bill (no GST
+  // was paid on them), and GST-purchase items normally go on a GST Bill.
+  const localItems = lines.filter((l) => l.product.purchaseType === "LOCAL");
+  const gstItems = lines.filter((l) => l.product.purchaseType !== "LOCAL");
+  const suggested: BillType | null = lines.length === 0 ? null : localItems.length === 0 ? "GST" : gstItems.length === 0 ? "PLAIN" : null;
+  const names = (ls: Line[]) => [...new Set(ls.map((l) => l.product.name))].slice(0, 4).join(", ") + (new Set(ls.map((l) => l.product.name)).size > 4 ? "…" : "");
+  function mismatch(billType: BillType) {
+    if (billType === "GST" && localItems.length)
+      return `${localItems.length} item(s) on this bill were bought on a NORMAL bill (no GST):\n${names(localItems)}\n\nA GST Bill will charge GST on them. Make a GST Bill anyway?`;
+    if (billType === "PLAIN" && gstItems.length)
+      return `${gstItems.length} item(s) on this bill were bought with a GST bill:\n${names(gstItems)}\n\nA plain Bill shows no GST for them. Make a plain Bill anyway?`;
+    return "";
+  }
 
   const totals = useMemo(() => billTotals(lines.map((l) => ({ ...l, gstRate: l.product.gstRate }))), [lines]);
 
@@ -138,6 +153,8 @@ export function PointOfSale({ categories, billSettings, startCustomer }: { categ
     }
     if (shipElsewhere && !consignee.name.trim()) return setError("Enter the consignee's name, or untick Ship to a different address.");
     if (!walkIn && (!customer.name.trim() || customer.phone.replace(/\D/g, "").length < 10)) return setError("Enter the customer's name and 10 digit phone, or tick Walk-in.");
+    const caution = mismatch(billType);
+    if (caution && !window.confirm(caution)) return;
     setBusy(true);
     const res = await fetch("/api/sales", {
       method: "POST",
@@ -196,7 +213,7 @@ export function PointOfSale({ categories, billSettings, startCustomer }: { categ
                 <button key={p.id} type="button" className="list-row pick-row" onClick={() => addProduct(p)}>
                   <div className="stack" style={{ "--gap": "2px", minWidth: 0 } as React.CSSProperties}>
                     <span className="row-title">{p.name}</span>
-                    <span className="row-sub mono">{p.barcode || p.sku} · {p.category}</span>
+                    <span className="row-sub mono">{p.barcode || p.sku} · {p.category} · {p.purchaseType === "LOCAL" ? "Normal bill purchase" : "GST bill purchase"}</span>
                   </div>
                   <span className={`badge ${p.stock <= 0 ? "badge-REWORK" : p.stock <= p.lowStockAt ? "badge-SUBMITTED" : "badge-COMPLETED"}`}>{p.stock} in stock</span>
                   <span style={{ fontWeight: 750 }}>{formatINR(p.price)}</span>
@@ -242,7 +259,7 @@ export function PointOfSale({ categories, billSettings, startCustomer }: { categ
                     return (
                       <tr key={l.key}>
                         <td>
-                          <div style={{ fontWeight: 700 }}>{l.product.name}</div>
+                          <div className="row" style={{ "--gap": "8px", flexWrap: "wrap" } as React.CSSProperties}><span style={{ fontWeight: 700 }}>{l.product.name}</span><PurchaseBadge type={l.product.purchaseType} /></div>
                           <div className="row-sub mono">{l.product.barcode || l.product.sku} · MRP {formatINR(l.product.mrp)} · GST {l.product.gstRate}%</div>
                           {short && <div className="error-text">Only {l.product.stock} in stock</div>}
                         </td>
@@ -393,11 +410,20 @@ export function PointOfSale({ categories, billSettings, startCustomer }: { categ
             <dt className="grand">Total</dt><dd className="grand">{formatINR(totals.grandTotal)}</dd>
           </dl>
           {error && <div className="alert alert-error"><AlertCircle />{error}</div>}
+          {lines.length > 0 && (
+            localItems.length && gstItems.length ? (
+              <div className="alert alert-warn"><AlertCircle /><span><b>Caution: mixed purchase.</b> {localItems.length} item(s) bought on a normal bill (no GST): {names(localItems)}. {gstItems.length} item(s) bought on a GST bill. Consider two bills: a <b>Bill</b> for the normal-bill items and a <b>GST Bill</b> for the rest.</span></div>
+            ) : localItems.length ? (
+              <div className="alert alert-warn"><AlertCircle /><span><b>Caution: normal bill purchase.</b> These items were bought on a normal bill without GST. Use <b>Bill</b> (no GST), not GST Bill.</span></div>
+            ) : (
+              <div className="alert alert-info"><AlertCircle /><span>All items were bought on a GST bill. <b>GST Bill</b> is recommended.</span></div>
+            )
+          )}
           <div className="bill-buttons">
-            <button type="button" className="btn btn-lg" disabled={busy || lines.length === 0} onClick={() => generateBill("PLAIN")} title="Prices only, no GST or licence details">
+            <button type="button" className="btn btn-lg" data-suggested={suggested === "PLAIN"} disabled={busy || lines.length === 0} onClick={() => generateBill("PLAIN")} title="Prices only, no GST or licence details">
               {busy ? <span className="spinner" /> : <><ReceiptText /> Bill</>}
             </button>
-            <button type="button" className="btn btn-primary btn-lg" disabled={busy || lines.length === 0} onClick={() => generateBill("GST")} title="Tax invoice with GSTIN, HSN and GST breakdown">
+            <button type="button" className="btn btn-primary btn-lg" data-suggested={suggested === "GST"} disabled={busy || lines.length === 0} onClick={() => generateBill("GST")} title="Tax invoice with GSTIN, HSN and GST breakdown">
               {busy ? <span className="spinner" /> : <><FileText /> GST Bill</>}
             </button>
           </div>

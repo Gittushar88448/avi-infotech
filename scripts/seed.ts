@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import { randomBytes } from "crypto";
 import { Counter, LocationPing, Notification, Query, Review, Settings, SmsLog, User, connectDB, nextSequence } from "../src/lib/db";
-import { BillSettings, Category, Customer, Product, Sale, StockMovement } from "../src/lib/store/models";
+import { BillSettings, Category, Customer, Product, PurchaseBill, Sale, StockMovement } from "../src/lib/store/models";
 import { skuCode, toPaise } from "../src/lib/store/money";
 
 const demo = process.argv.includes("--demo");
@@ -18,7 +18,7 @@ async function user(name: string, email: string, role: "ADMIN" | "TECHNICIAN", p
 
 async function main() {
   await connectDB();
-  await Promise.all([User, Query, Review, Notification, SmsLog, Counter, LocationPing, Settings, Category, Product, Customer, Sale, StockMovement, BillSettings].map((m) => m.syncIndexes()));
+  await Promise.all([User, Query, Review, Notification, SmsLog, Counter, LocationPing, Settings, Category, Product, Customer, Sale, StockMovement, BillSettings, PurchaseBill].map((m) => m.syncIndexes()));
   console.log("Collections and indexes are ready.");
 
   const adminEmail = (process.env.SEED_ADMIN_EMAIL || "admin@aviinfotech.local").toLowerCase();
@@ -81,6 +81,8 @@ async function main() {
           name, category: category._id, brand, model, barcode: barcode || undefined, sku: skuCode(await nextSequence("sku")),
           unit: name.includes("Cable") ? "roll" : "pcs", hsn, mrp: toPaise(mrp), price: toPaise(price), costPrice: toPaise(price * 0.8),
           gstRate, lowStockAt: 3, warrantyMonths, stock: openingStock,
+          // Demo: generic accessories were bought on a local bill without GST.
+          purchaseType: brand === "Generic" ? "LOCAL" : "GST",
         });
         await StockMovement.create({ product: product._id, change: openingStock, balanceAfter: openingStock, reason: "OPENING", note: "Demo data", by: admin._id });
       }

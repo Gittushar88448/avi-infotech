@@ -8,7 +8,7 @@
 import { Schema, Types } from "mongoose";
 import { getModel } from "../db";
 import { PAYMENT_MODES, type PaymentMode } from "./money";
-import { BILL_TYPES, type BillDetails, type BillType, type SectionKey } from "./bill-format";
+import { BILL_TYPES, PURCHASE_TYPES, type PurchaseType, type BillDetails, type BillType, type SectionKey } from "./bill-format";
 
 const { ObjectId } = Schema.Types;
 type Id = Types.ObjectId;
@@ -31,6 +31,8 @@ export interface IProduct {
   price: number;
   costPrice: number;
   gstRate: number;
+  /** Bought with a GST bill or a local bill without GST. */
+  purchaseType: PurchaseType;
   stock: number;
   lowStockAt: number;
   warrantyMonths: number;
@@ -129,8 +131,25 @@ export interface ISale {
 }
 export const MOVEMENT_REASONS = ["OPENING", "RESTOCK", "SALE", "SALE_CANCELLED", "ADJUSTMENT", "DAMAGED", "RETURN"] as const;
 export type MovementReason = (typeof MOVEMENT_REASONS)[number];
+export interface IBillFile { name: string; original: string; type: string; size: number }
+/** A supplier's bill for stock we bought: kept with a photo/PDF so both normal and GST purchases are on record. */
+export interface IPurchaseBill {
+  billType: PurchaseType;
+  supplier: string;
+  billNo: string;
+  billDate?: Date;
+  /** Bill total in paise (optional). */
+  amount: number;
+  notes: string;
+  files: IBillFile[];
+  by?: Id | string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 export interface IStockMovement {
   product: Id | string;
+  /** Supplier bill this stock came in on (opening stock / restock). */
+  purchaseBill?: Id | string;
   /** Positive adds stock, negative removes it. */
   change: number;
   balanceAfter: number;
@@ -165,6 +184,7 @@ const productSchema = new Schema<IProduct>(
     price: { type: Number, required: true, min: 0 },
     costPrice: { type: Number, default: 0, min: 0 },
     gstRate: { type: Number, default: 18, min: 0, max: 28 },
+    purchaseType: { type: String, enum: PURCHASE_TYPES, default: "GST" },
     stock: { type: Number, default: 0 },
     lowStockAt: { type: Number, default: 3, min: 0 },
     warrantyMonths: { type: Number, default: 0, min: 0 },
@@ -288,12 +308,31 @@ const stockMovementSchema = new Schema<IStockMovement>(
     balanceAfter: { type: Number, required: true },
     reason: { type: String, enum: MOVEMENT_REASONS, required: true },
     sale: { type: ObjectId, ref: "Sale" },
+    purchaseBill: { type: ObjectId, ref: "PurchaseBill" },
     note: { type: String, default: "" },
     by: { type: ObjectId, ref: "User" },
   },
   { timestamps: true },
 );
 stockMovementSchema.index({ product: 1, createdAt: -1 });
+stockMovementSchema.index({ purchaseBill: 1 }, { sparse: true });
+
+// ── Purchase bills ──────────────────────────────────
+const purchaseBillSchema = new Schema<IPurchaseBill>(
+  {
+    billType: { type: String, enum: PURCHASE_TYPES, required: true },
+    supplier: { type: String, default: "", trim: true },
+    billNo: { type: String, default: "", trim: true },
+    billDate: { type: Date },
+    amount: { type: Number, default: 0, min: 0 },
+    notes: { type: String, default: "" },
+    files: [{ _id: false, name: String, original: String, type: { type: String }, size: Number }],
+    by: { type: ObjectId, ref: "User" },
+  },
+  { timestamps: true },
+);
+purchaseBillSchema.index({ billType: 1, createdAt: -1 });
+purchaseBillSchema.index({ createdAt: -1 });
 
 export const Category = getModel<ICategory>("Category", categorySchema, "categories");
 export const Product = getModel<IProduct>("Product", productSchema, "products");
@@ -301,3 +340,4 @@ export const Customer = getModel<ICustomer>("Customer", customerSchema, "custome
 export const Sale = getModel<ISale>("Sale", saleSchema, "sales");
 export const BillSettings = getModel<IBillSettings>("BillSettings", billSettingsSchema, "bill_settings");
 export const StockMovement = getModel<IStockMovement>("StockMovement", stockMovementSchema, "stock_movements");
+export const PurchaseBill = getModel<IPurchaseBill>("PurchaseBill", purchaseBillSchema, "purchase_bills");

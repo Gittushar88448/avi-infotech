@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, Contact, LayoutDashboard, MapPinned, MessageSquareText, Package, PlusCircle, ReceiptText, Settings2, ScanBarcode, Send, Star, Users, Wrench } from "lucide-react";
+import { ClipboardList, Contact, FileStack, LayoutDashboard, MapPinned, MessageSquareText, Package, PlusCircle, ReceiptText, Settings2, ScanBarcode, Send, Star, Users, Wrench } from "lucide-react";
 
-const ICONS = { dashboard: LayoutDashboard, new: PlusCircle, team: Users, reviews: Star, sms: Send, jobs: Wrench, history: ClipboardList, public: MessageSquareText, billing: ScanBarcode, products: Package, sales: ReceiptText, customers: Contact, map: MapPinned, settings: Settings2 };
+const ICONS = { dashboard: LayoutDashboard, new: PlusCircle, team: Users, reviews: Star, sms: Send, jobs: Wrench, history: ClipboardList, public: MessageSquareText, billing: ScanBarcode, products: Package, sales: ReceiptText, customers: Contact, map: MapPinned, settings: Settings2, purchases: FileStack };
 export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; exact?: boolean; count?: number };
 
 export function NavLinks({ items, mobile }: { items: NavItem[]; mobile?: boolean }) {

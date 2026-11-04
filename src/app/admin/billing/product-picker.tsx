@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Minus, Plus, Search, ShoppingCart, X } from "lucide-react";
 import { formatINR } from "@/lib/store/money";
 import type { ProductDTO } from "@/lib/store/products";
+import { PurchaseBadge } from "@/components/store-ui";
 
 /**
  * Pick products from the full catalog instead of scanning: search or filter by category,
@@ -13,6 +14,7 @@ export function ProductPicker({ inBill, onAdd, onClose }: { inBill: Record<strin
   const [all, setAll] = useState<ProductDTO[] | null>(null);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
+  const [pt, setPt] = useState("");
   const [qty, setQty] = useState<Record<string, number>>({});
   const [error, setError] = useState("");
 
@@ -27,9 +29,9 @@ export function ProductPicker({ inBill, onAdd, onClose }: { inBill: Record<strin
   const shown = useMemo(() => {
     const t = q.trim().toLowerCase();
     return (all ?? []).filter(
-      (p) => (!cat || p.category === cat) && (!t || [p.name, p.brand, p.model, p.sku, p.barcode].some((v) => v?.toLowerCase().includes(t))),
+      (p) => (!cat || p.category === cat) && (!pt || p.purchaseType === pt) && (!t || [p.name, p.brand, p.model, p.sku, p.barcode].some((v) => v?.toLowerCase().includes(t))),
     );
-  }, [all, q, cat]);
+  }, [all, q, cat, pt]);
 
   const picked = Object.entries(qty).filter(([, n]) => n > 0);
   const units = picked.reduce((a, [, n]) => a + n, 0);
@@ -54,6 +56,11 @@ export function ProductPicker({ inBill, onAdd, onClose }: { inBill: Record<strin
             <option value="">All categories</option>
             {categories.map((c) => <option key={c}>{c}</option>)}
           </select>
+          <select className="select" value={pt} onChange={(e) => setPt(e.target.value)} style={{ width: 190 }} aria-label="Purchase type">
+            <option value="">GST and normal bill</option>
+            <option value="GST">GST bill only</option>
+            <option value="LOCAL">Normal bill only</option>
+          </select>
         </div>
 
         <div className="picker-list">
@@ -70,7 +77,7 @@ export function ProductPicker({ inBill, onAdd, onClose }: { inBill: Record<strin
               return (
                 <div key={p.id} className="picker-row" data-picked={n > 0} data-out={left === 0}>
                   <div className="grow" style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 650 }}>{p.name}</div>
+                    <div className="row" style={{ "--gap": "8px", flexWrap: "wrap" } as React.CSSProperties}><span style={{ fontWeight: 650 }}>{p.name}</span><PurchaseBadge type={p.purchaseType} /></div>
                     <div className="row-sub">{p.category}{p.brand && ` · ${p.brand}`} · <span className="mono">{p.barcode || p.sku}</span></div>
                   </div>
                   <div style={{ textAlign: "right", minWidth: 96 }}>

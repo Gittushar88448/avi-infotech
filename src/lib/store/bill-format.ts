@@ -11,6 +11,25 @@ export const BILL_TYPE_LABEL: Record<BillType, string> = { PLAIN: "Bill", GST: "
 /** Bills saved before bill types existed were tax-invoice style. */
 export const billTypeOf = (t?: string | null): BillType => (t === "PLAIN" ? "PLAIN" : "GST");
 
+/**
+ * How the shop bought a product: with a supplier's GST bill (input tax credit available) or on a
+ * normal bill without GST. Used to filter the catalog and to warn when the bill type doesn't match.
+ */
+export const PURCHASE_TYPES = ["GST", "LOCAL"] as const;
+export type PurchaseType = (typeof PURCHASE_TYPES)[number];
+export const PURCHASE_LABEL: Record<PurchaseType, string> = { GST: "GST bill purchase", LOCAL: "Normal bill purchase (no GST)" };
+export const PURCHASE_SHORT: Record<PurchaseType, string> = { GST: "GST bill", LOCAL: "Normal bill" };
+/** Products saved before this field existed count as GST purchases. */
+export const purchaseTypeOf = (t?: string | null): PurchaseType => (t === "LOCAL" ? "LOCAL" : "GST");
+/** Reads CSV / form spellings: "gst", "GST bill", "local", "non gst", "without gst", "kaccha"... */
+export function parsePurchaseType(v: unknown): PurchaseType | undefined {
+  const s = String(v ?? "").toLowerCase().replace(/[^a-z]/g, "");
+  if (!s) return undefined;
+  if (["local", "localbill", "normal", "normalbill", "nongst", "withoutgst", "nogst", "plain", "bill", "kaccha", "kachha", "cash"].includes(s)) return "LOCAL";
+  if (["gst", "gstbill", "withgst", "taxinvoice", "invoice", "pakka", "pucca"].includes(s)) return "GST";
+  return s as PurchaseType; // invalid: zod reports it
+}
+
 export const SECTIONS = [
   { key: "companyContact", label: "Company address, phone and email", plain: true, gst: true },
   { key: "companyTax", label: "Company GSTIN/UIN, PAN, state name & code, licence numbers", plain: false, gst: true },

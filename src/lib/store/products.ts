@@ -6,6 +6,7 @@ import { Category, Product, StockMovement, type IProduct, type MovementReason } 
 import { skuCode } from "./money";
 import { ImportRow, type ProductData } from "./schemas";
 import { StoreError } from "./errors";
+import { purchaseTypeOf, type PurchaseType } from "./bill-format";
 
 const escapeRx = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -33,12 +34,14 @@ export async function findByCode(code: string) {
 }
 
 /** Free-text search across name, brand, model, SKU and barcode. */
-export async function searchProducts(q: string, opts: { categoryId?: string; stock?: "low" | "out"; limit?: number; includeInactive?: boolean } = {}) {
+export async function searchProducts(q: string, opts: { categoryId?: string; stock?: "low" | "out"; purchaseType?: PurchaseType; limit?: number; includeInactive?: boolean } = {}) {
   const rx = q.trim() ? new RegExp(escapeRx(q.trim()), "i") : null;
   const filter: Record<string, unknown> = {
     ...(!opts.includeInactive && { active: true }),
     ...(rx && { $or: [{ name: rx }, { brand: rx }, { model: rx }, { sku: rx }, { barcode: rx }] }),
     ...(opts.categoryId && isId(opts.categoryId) && { category: opts.categoryId }),
+    ...(opts.purchaseType === "LOCAL" && { purchaseType: "LOCAL" }),
+    ...(opts.purchaseType === "GST" && { purchaseType: { $ne: "LOCAL" } }),
     ...(opts.stock === "out" && { stock: { $lte: 0 } }),
     ...(opts.stock === "low" && { $expr: { $and: [{ $gt: ["$stock", 0] }, { $lte: ["$stock", "$lowStockAt"] }] } }),
   };
@@ -67,6 +70,7 @@ export function productDTO(p: Omit<IProduct, "category"> & { _id: unknown; categ
     price: p.price,
     costPrice: p.costPrice,
     gstRate: p.gstRate,
+    purchaseType: purchaseTypeOf(p.purchaseType),
     stock: p.stock,
     lowStockAt: p.lowStockAt,
     warrantyMonths: p.warrantyMonths,
@@ -80,12 +84,12 @@ function fields(data: ProductData, categoryId: unknown) {
   return { ...rest, category: categoryId, barcode: barcode || undefined };
 }
 
-export async function createProduct(data: ProductData & { openingStock: number }, by: string) {
-  const { openingStock, ...input } = data;
+export async function createProduct(data: ProductData & { openingStock: number; purchaseBillId?: string }, by: string) {
+  const { openingStock, purchaseBillId, ...input } = data;
   if (input.barcode && (await Product.exists({ barcode: input.barcode }))) throw new StoreError("Another product already has this barcode", 409);
   const category = await ensureCategory(input.categoryName);
   const product = await Product.create({ ...fields(input, category._id), sku: skuCode(await nextSequence("sku")), stock: 0 });
-  if (openingStock > 0) await changeStock(String(product._id), openingStock, "OPENING", { by, note: "Opening stock" });
+  if (openingStock > 0) await changeStock(String(product._id), openingStock, "OPENING", { by, note: "Opening stock", purchaseBillId: purchaseBillId || undefined });
   return product;
 }
 
@@ -115,7 +119,7 @@ export async function changeStock(
   productId: string,
   change: number,
   reason: MovementReason,
-  opts: { by?: string; note?: string; saleId?: string; allowNegative?: boolean } = {},
+  opts: { by?: string; note?: string; saleId?: string; purchaseBillId?: string; allowNegative?: boolean } = {},
 ) {
   const guard = change < 0 && !opts.allowNegative ? { stock: { $gte: -change } } : {};
   const p = await Product.findOneAndUpdate({ _id: productId, ...guard }, { $inc: { stock: change } }, { new: true }).select("stock name").lean();
@@ -124,7 +128,7 @@ export async function changeStock(
     if (!exists) throw new StoreError("Product not found", 404);
     throw new StoreError(`Only ${exists.stock} of "${exists.name}" in stock`, 409);
   }
-  await StockMovement.create({ product: productId, change, balanceAfter: p.stock, reason, sale: opts.saleId, note: opts.note ?? "", by: opts.by });
+  await StockMovement.create({ product: productId, change, balanceAfter: p.stock, reason, sale: opts.saleId, purchaseBill: opts.purchaseBillId, note: opts.note ?? "", by: opts.by });
   return p.stock;
 }
 
@@ -147,10 +151,12 @@ export async function importProducts(rows: { line: number; data: Record<string, 
     }
     const { sku, stock, ...product } = parsed.data;
     try {
-      const existing = await Product.findOne(product.barcode ? { barcode: product.barcode } : sku ? { sku: sku.toUpperCase() } : { _id: null }).select("stock barcode").lean();
+      const existing = await Product.findOne(product.barcode ? { barcode: product.barcode } : sku ? { sku: sku.toUpperCase() } : { _id: null }).select("stock barcode purchaseType").lean();
       if (existing) {
         // A blank barcode cell doesn't wipe a barcode the product already has.
-        await updateProduct(String(existing._id), { ...product, barcode: product.barcode || existing.barcode || "" });
+        // Same for a blank purchase type cell: keep what the product already has.
+        const purchaseType = data.purchaseType?.trim() ? product.purchaseType : purchaseTypeOf(existing.purchaseType);
+        await updateProduct(String(existing._id), { ...product, purchaseType, barcode: product.barcode || existing.barcode || "" });
         await Product.updateOne({ _id: existing._id }, { active: true });
         if (stock !== "") {
           const change = stockMode === "add" ? stock : stock - existing.stock;

@@ -17,6 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: "/admin", label: "Dashboard", icon: "dashboard", exact: true, count: awaiting },
         { href: "/admin/billing", label: "Billing", icon: "billing" },
         { href: "/admin/products", label: "Products", icon: "products", count: lowStock },
+        { href: "/admin/purchases", label: "Purchase bills", icon: "purchases" },
         { href: "/admin/sales", label: "Sales", icon: "sales" },
         { href: "/admin/customers", label: "Customers", icon: "customers" },
         { href: "/admin/bill-settings", label: "Bill settings", icon: "settings" },
