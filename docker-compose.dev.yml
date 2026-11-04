@@ -1,0 +1,26 @@
+# Development in Docker, with live reload: edits on your PC show up instantly.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# (or: npm run docker:dev)
+
+services:
+  app:
+    build:
+      context: .
+      target: deps
+    image: avi-infotech-dev
+    command: ["npm", "run", "dev"]
+    environment:
+      NODE_ENV: development
+      # File watching through Docker Desktop on Windows/Mac needs polling.
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+      - uploads:/app/uploads
+    healthcheck:
+      disable: true
+
+  mongo:
+    ports:
+      - "27017:27017"

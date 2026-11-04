@@ -1,8 +1,9 @@
 # Run the whole app on any PC with Docker:
-#   1. cp .env.docker.example .env      (then set AUTH_SECRET and the admin password)
+#   1. cp .env.example .env             (then set AUTH_SECRET and the admin password)
 #   2. docker compose up -d --build
 #   3. open http://localhost:3000
 # Settings come from .env; anything missing falls back to the defaults below.
+# Development with live reload: see docker-compose.dev.yml.
 
 name: avi-infotech
 

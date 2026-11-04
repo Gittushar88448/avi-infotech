@@ -75,11 +75,11 @@ Next.js 15 (App Router) · React 19 · TypeScript · **MongoDB with Mongoose** �
 
 ## Getting started
 
-Requires Node.js 20 or newer and a MongoDB database.
+Requires Node.js 20 or newer and a MongoDB database. (Prefer Docker? See **Run with Docker** below: nothing else to install.)
 
 ```bash
 npm install
-cp .env.example .env           # set MONGODB_URI and AUTH_SECRET (openssl rand -hex 32)
+cp .env.example .env           # set AUTH_SECRET; for no-Docker use MONGODB_URI=mongodb://127.0.0.1:27017/aviinfotech and UPLOAD_DIR=./uploads
 npm run setup                  # creates indexes and the first admin
 npm run seed:demo              # optional: sample technicians, jobs, reviews and shop products
 npm run dev                    # http://localhost:3000
@@ -101,7 +101,7 @@ In `npm run dev` with `EMAIL_PROVIDER=console`, the forgot-password page shows t
 Only [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows / Mac) or Docker Engine (Linux) is needed. No Node.js or MongoDB install: the database runs in its own container.
 
 ```bash
-cp .env.docker.example .env      # Windows PowerShell: copy .env.docker.example .env
+cp .env.example .env             # Windows: copy .env.example .env
 # edit .env: set AUTH_SECRET (openssl rand -hex 32) and SEED_ADMIN_PASSWORD
 docker compose up -d --build     # first build takes a few minutes
 ```
@@ -128,6 +128,16 @@ docker compose exec -T mongo mongodump --archive --gzip > backup.gz   # database
 docker compose exec -T mongo mongorestore --archive --gzip < backup.gz  # restore
 docker compose down -v                # stop AND delete all data (careful)
 ```
+
+Shortcuts (same thing, if Node is installed): `npm run docker:up`, `docker:down`, `docker:logs`, `docker:demo`, `docker:backup`.
+
+**Develop inside Docker** (live reload, no Node on your PC):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
+
+Your source folder is mounted into the container, so saved edits appear at http://localhost:3000 straight away. MongoDB is also exposed on `localhost:27017` in this mode (for MongoDB Compass).
 
 Notes:
 
@@ -185,9 +195,6 @@ Collections:
 | `SMS_DEFAULT_COUNTRY_CODE` | Added to numbers typed without `+`, e.g. `+91` |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID` | Twilio credentials |
 | `EMAIL_PROVIDER`, `EMAIL_FROM`, `RESEND_API_KEY` | `console` or `resend` for password reset emails |
-| `STORE_ADDRESS`, `STORE_PHONE`, `STORE_EMAIL` | Shop details printed at the top of every bill |
-| `STORE_GSTIN` | Your GSTIN. When set, bills are titled "Tax invoice" |
-| `INVOICE_TERMS` | Footer text on bills (return policy, warranty terms) |
 | `LOCATION_HISTORY_DAYS` | Days of technician location history kept (default 7) |
 
 **SMS in India:** sending to Indian numbers requires DLT registration of your sender ID and message template, whichever provider you use. To use an Indian gateway such as MSG91 or Fast2SMS, add a provider object in `src/lib/sms.ts`. It's one function.
