@@ -10,7 +10,7 @@ import { PurchaseBadge } from "@/components/store-ui";
  * Pick products from the full catalog instead of scanning: search or filter by category,
  * set a quantity on as many products as you like, then add them all to the bill at once.
  */
-export function ProductPicker({ inBill, onAdd, onClose }: { inBill: Record<string, number>; onAdd: (picks: { product: ProductDTO; qty: number }[]) => void; onClose: () => void }) {
+export function ProductPicker({ inBill, onAdd, onClose, ignoreStock = false, actionLabel = "Add to bill" }: { inBill: Record<string, number>; onAdd: (picks: { product: ProductDTO; qty: number }[]) => void; onClose: () => void; /** Quotations may offer more than is in stock. */ ignoreStock?: boolean; actionLabel?: string }) {
   const [all, setAll] = useState<ProductDTO[] | null>(null);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("");
@@ -37,7 +37,7 @@ export function ProductPicker({ inBill, onAdd, onClose }: { inBill: Record<strin
   const units = picked.reduce((a, [, n]) => a + n, 0);
   const amount = picked.reduce((a, [id, n]) => a + (all?.find((p) => p.id === id)?.price ?? 0) * n, 0);
   // Stock left after what's already on the bill.
-  const free = (p: ProductDTO) => Math.max(0, p.stock - (inBill[p.id] ?? 0));
+  const free = (p: ProductDTO) => (ignoreStock ? 100_000 : Math.max(0, p.stock - (inBill[p.id] ?? 0)));
   const setN = (p: ProductDTO, n: number) => setQty((s) => ({ ...s, [p.id]: Math.max(0, Math.min(free(p), Math.floor(n) || 0)) }));
 
   return (
@@ -82,7 +82,7 @@ export function ProductPicker({ inBill, onAdd, onClose }: { inBill: Record<strin
                   </div>
                   <div style={{ textAlign: "right", minWidth: 96 }}>
                     <div style={{ fontWeight: 700 }}>{formatINR(p.price)}</div>
-                    <div className={left === 0 ? "error-text" : "hint"} style={{ fontSize: 12 }}>{left === 0 ? "Out of stock" : `${left} in stock`}</div>
+                    <div className={left === 0 || p.stock <= 0 ? "error-text" : "hint"} style={{ fontSize: 12 }}>{ignoreStock ? (p.stock > 0 ? `${p.stock} in stock` : "Out of stock") : left === 0 ? "Out of stock" : `${left} in stock`}</div>
                   </div>
                   {n === 0 ? (
                     <button type="button" className="btn btn-sm" disabled={left === 0} onClick={() => setN(p, 1)}><Plus /> Add</button>
@@ -108,7 +108,7 @@ export function ProductPicker({ inBill, onAdd, onClose }: { inBill: Record<strin
               disabled={!picked.length}
               onClick={() => onAdd(picked.map(([id, n]) => ({ product: all!.find((p) => p.id === id)!, qty: n })))}
             >
-              <ShoppingCart /> Add to bill
+              <ShoppingCart /> {actionLabel}
             </button>
           </div>
         </div>

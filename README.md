@@ -35,6 +35,20 @@ Internal app for Avi Infotech, a camera and hardware company. It runs the field-
 - **Sales history** (`Admin → Sales`): every bill, searchable by bill number, customer, phone, product or barcode, with date range and today / this month totals.
 - **Customers** (`Admin → Customers`): each customer's bills and the exact products they bought, with total spent.
 
+## Quotations
+
+**Admin → Quotations** makes price quotes for customers, numbered `QT-00001`.
+
+- **Build it interactively:** scan a barcode or type a name, choose from the product list (out-of-stock items can be quoted too), or add a **custom item** such as installation or labour. Each line has a quantity stepper, unit (pcs, job, m...), rate, discount, GST rate and an optional description. Lines can be moved up or down, duplicated or removed, and **Apply to all** gives every line the same % discount. The total, GST and amount in words update as you type.
+- **Customer:** type a phone number to fill in a returning customer, or enter name, address, email, GSTIN and state. A subject line and a *valid until* date (7 / 15 / 30 day shortcuts) are optional.
+- **Simple or with GST details:** a simple quotation shows prices only; the GST version adds your GSTIN, HSN codes and the CGST + SGST (or IGST for another state) breakdown. Prices include GST, the same as bills.
+- **Save** (or Ctrl + S). Leaving with unsaved changes asks first.
+- **PDF and sharing:** **Download PDF** makes an A4 PDF with your company details from Bill settings, items, totals, GST summary, notes, terms, bank details and signature. **Share PDF** opens the phone's share sheet (WhatsApp, Gmail, Drive...) with the PDF attached, **WhatsApp** opens a chat with the customer's number and the link, and **Copy link**, **Email** and **Print** are there too. Sharing marks the quotation as *Sent*.
+- **Customer link:** every quotation has a private link (`/quote/...`) the customer can open on their phone without signing in, view, download as PDF and print.
+- **Status:** Draft, Sent, Accepted, Rejected and Billed, with filters, search, open value and win rate on the list. A quotation past its *valid until* date shows *Expired*.
+- **Make bill from this:** opens Billing with the quoted products, quantities, prices and customer filled in. Prices above MRP are capped at MRP, and custom items are listed so you can add them separately. When the bill is saved, the quotation becomes *Billed* and links to it. Quotations never change stock.
+- **Duplicate** copies a quotation as a new draft; **Edit** works until it is billed. Customers' pages have a **New quotation** button.
+
 ## Bill and GST Bill
 
 The billing screen has two buttons:

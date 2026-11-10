@@ -23,7 +23,10 @@ export default async function CustomerDetail({ params }: { params: Promise<{ id:
     <div className="page">
       <div className="row wrap between">
         <Link href="/admin/customers" className="row muted" style={{ "--gap": "6px", fontWeight: 700, fontSize: 14 } as React.CSSProperties}><ArrowLeft style={{ width: 16 }} /> All customers</Link>
-        <Link href={`/admin/billing?customer=${id}`} className="btn btn-primary"><Plus /> New bill for this customer</Link>
+        <div className="row wrap" style={{ "--gap": "8px" } as React.CSSProperties}>
+          <Link href={`/admin/quotations/new?customer=${id}`} className="btn"><Plus /> New quotation</Link>
+          <Link href={`/admin/billing?customer=${id}`} className="btn btn-primary"><Plus /> New bill for this customer</Link>
+        </div>
       </div>
       <div className="card row wrap between">
         <div className="row" style={{ "--gap": "16px" } as React.CSSProperties}>

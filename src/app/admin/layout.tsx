@@ -16,6 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       nav={[
         { href: "/admin", label: "Dashboard", icon: "dashboard", exact: true, count: awaiting },
         { href: "/admin/billing", label: "Billing", icon: "billing" },
+        { href: "/admin/quotations", label: "Quotations", icon: "quotes" },
         { href: "/admin/products", label: "Products", icon: "products", count: lowStock },
         { href: "/admin/purchases", label: "Purchase bills", icon: "purchases" },
         { href: "/admin/sales", label: "Sales", icon: "sales" },

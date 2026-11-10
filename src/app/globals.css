@@ -679,3 +679,47 @@ p { margin: 0; }
 .picker-row:last-child { border-bottom: 0; }
 .picker-row[data-picked="true"] { background: var(--accent-soft); }
 .picker-row[data-out="true"] { opacity: 0.6; }
+
+/* ───────────────────────── Quotations ───────────────────────── */
+.qchip { height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s var(--ease); }
+.qchip:hover { color: var(--text); border-color: var(--accent); }
+.qchip[data-active="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.link-btn { border: 0; background: none; padding: 2px 0; font: inherit; font-size: 13px; cursor: pointer; text-align: left; display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link-btn:hover { color: var(--accent); }
+.unit-input { width: 102px; margin-top: 6px; height: 28px; font-size: 12.5px; text-align: center; }
+.quote-lines td { vertical-align: top; padding-top: 12px; padding-bottom: 12px; }
+.quote-line .line-tools { opacity: 0.45; transition: opacity 0.2s var(--ease); }
+.quote-line:hover .line-tools, .quote-line:focus-within .line-tools { opacity: 1; }
+.quote-line { animation: rise 0.35s var(--ease) both; }
+.quote-paper { background: #fff; color: #16202e; border-radius: 14px; box-shadow: var(--shadow-md, 0 10px 30px rgba(0,0,0,.08)); padding: 36px 40px; max-width: 900px; width: 100%; margin: 0 auto; font-size: 14px; }
+.quote-paper h2 { color: #0a6c96; letter-spacing: 0.04em; }
+.quote-paper .q-muted { color: #647080; }
+.quote-paper table { width: 100%; border-collapse: collapse; }
+.quote-paper th { background: #0a6c96; color: #fff; text-align: left; padding: 8px 10px; font-size: 12.5px; }
+.quote-paper td { padding: 8px 10px; border-bottom: 1px solid #d6dee8; vertical-align: top; }
+.quote-paper .num { text-align: right; font-variant-numeric: tabular-nums; }
+.quote-paper .q-total { background: #edf5fa; border-radius: 8px; padding: 10px 12px; font-weight: 800; font-size: 17px; }
+.quote-actions { position: sticky; top: 72px; z-index: 5; background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(10px); padding: 10px 0; }
+.badge-DRAFT { --c: var(--slate); --s: var(--slate-soft); }
+.badge-SENT { --c: var(--sky); --s: var(--sky-soft); }
+.badge-ACCEPTED { --c: var(--green); --s: var(--green-soft); }
+.badge-REJECTED { --c: var(--rose); --s: var(--rose-soft); }
+.badge-CONVERTED { --c: var(--violet); --s: var(--violet-soft); }
+@media (max-width: 700px) { .quote-paper { padding: 20px 16px; font-size: 13px; } }
+@media print {
+  .quote-actions, .sidebar, .topbar, .mobile-nav, nav, header { display: none !important; }
+  .quote-paper { box-shadow: none; padding: 0; max-width: none; }
+}
+/* Quotation lines: keep inputs readable and scroll sideways on narrow screens instead of squashing them */
+.quote-lines, .pos-lines { min-width: 560px; }
+.quote-lines th, .quote-lines td, .pos-lines th, .pos-lines td { padding-left: 8px; padding-right: 8px; }
+.quote-lines th:first-child, .quote-lines td:first-child, .pos-lines th:first-child, .pos-lines td:first-child { padding-left: 18px; }
+.quote-lines th:last-child, .quote-lines td:last-child, .pos-lines th:last-child, .pos-lines td:last-child { padding-right: 18px; }
+.quote-lines td input.input-sm:not(.unit-input), .quote-lines td select { min-width: 72px; width: 100%; }
+.quote-lines .num { white-space: nowrap; }
+.disc-input { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.disc-input .input { height: 28px; font-size: 12.5px; min-width: 0 !important; }
+/* Billing lines: price and discount boxes never shrink below a readable width */
+.pos-lines td input.input-sm { min-width: 72px; width: 100%; }
+.pos-lines .num { white-space: nowrap; }
+.pos-lines td:first-child { min-width: 150px; } .pos-lines .row-sub { white-space: normal; overflow-wrap: anywhere; }

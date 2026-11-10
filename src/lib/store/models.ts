@@ -131,6 +131,52 @@ export interface ISale {
 }
 export const MOVEMENT_REASONS = ["OPENING", "RESTOCK", "SALE", "SALE_CANCELLED", "ADJUSTMENT", "DAMAGED", "RETURN"] as const;
 export type MovementReason = (typeof MOVEMENT_REASONS)[number];
+export const QUOTE_STATUSES = ["DRAFT", "SENT", "ACCEPTED", "REJECTED", "CONVERTED"] as const;
+export type QuoteStatus = (typeof QUOTE_STATUSES)[number];
+/** A line on a quotation: a catalog product, or a custom line such as installation or labour. */
+export interface IQuoteItem {
+  product?: Id | string;
+  name: string;
+  description: string;
+  hsn: string;
+  unit: string;
+  qty: number;
+  mrp: number;
+  unitPrice: number;
+  discount: number;
+  gstRate: number;
+  taxable: number;
+  tax: number;
+  total: number;
+}
+export interface IQuotation {
+  number: number;
+  /** PLAIN: prices only. GST: shows GSTIN, HSN and the GST breakdown. */
+  quoteType: BillType;
+  status: QuoteStatus;
+  subject: string;
+  customer?: Id | string;
+  customerSnapshot: IParty;
+  interState: boolean;
+  items: IQuoteItem[];
+  gross: number;
+  discount: number;
+  taxable: number;
+  tax: number;
+  roundOff: number;
+  grandTotal: number;
+  validUntil?: Date;
+  notes: string;
+  terms: string;
+  /** Random token for the customer's view-only link (/quote/<token>). */
+  shareToken: string;
+  sale?: Id | string;
+  sentAt?: Date;
+  convertedAt?: Date;
+  by?: Id | string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 export interface IBillFile { name: string; original: string; type: string; size: number }
 /** A supplier's bill for stock we bought: kept with a photo/PDF so both normal and GST purchases are on record. */
 export interface IPurchaseBill {
@@ -317,6 +363,55 @@ const stockMovementSchema = new Schema<IStockMovement>(
 stockMovementSchema.index({ product: 1, createdAt: -1 });
 stockMovementSchema.index({ purchaseBill: 1 }, { sparse: true });
 
+// ── Quotations ──────────────────────────────────────
+const quoteItemSchema = new Schema<IQuoteItem>(
+  {
+    product: { type: ObjectId, ref: "Product" },
+    name: { type: String, required: true },
+    description: { type: String, default: "" },
+    hsn: { type: String, default: "" },
+    unit: { type: String, default: "pcs" },
+    qty: { type: Number, required: true, min: 1 },
+    mrp: { type: Number, default: 0 },
+    unitPrice: { type: Number, required: true, min: 0 },
+    discount: { type: Number, default: 0, min: 0 },
+    gstRate: { type: Number, default: 18 },
+    taxable: Number,
+    tax: Number,
+    total: Number,
+  },
+  { _id: false },
+);
+const quotationSchema = new Schema<IQuotation>(
+  {
+    number: { type: Number, required: true, unique: true },
+    quoteType: { type: String, enum: BILL_TYPES, default: "GST" },
+    status: { type: String, enum: QUOTE_STATUSES, default: "DRAFT" },
+    subject: { type: String, default: "" },
+    customer: { type: ObjectId, ref: "Customer" },
+    customerSnapshot: { name: String, phone: String, email: String, address: String, gstin: String, stateName: String, stateCode: String },
+    interState: { type: Boolean, default: false },
+    items: [quoteItemSchema],
+    gross: Number,
+    discount: Number,
+    taxable: Number,
+    tax: Number,
+    roundOff: Number,
+    grandTotal: Number,
+    validUntil: Date,
+    notes: { type: String, default: "" },
+    terms: { type: String, default: "" },
+    shareToken: { type: String, required: true, unique: true },
+    sale: { type: ObjectId, ref: "Sale" },
+    sentAt: Date,
+    convertedAt: Date,
+    by: { type: ObjectId, ref: "User" },
+  },
+  { timestamps: true },
+);
+quotationSchema.index({ status: 1, createdAt: -1 });
+quotationSchema.index({ createdAt: -1 });
+
 // ── Purchase bills ──────────────────────────────────
 const purchaseBillSchema = new Schema<IPurchaseBill>(
   {
@@ -340,4 +435,5 @@ export const Customer = getModel<ICustomer>("Customer", customerSchema, "custome
 export const Sale = getModel<ISale>("Sale", saleSchema, "sales");
 export const BillSettings = getModel<IBillSettings>("BillSettings", billSettingsSchema, "bill_settings");
 export const StockMovement = getModel<IStockMovement>("StockMovement", stockMovementSchema, "stock_movements");
+export const Quotation = getModel<IQuotation>("Quotation", quotationSchema, "quotations");
 export const PurchaseBill = getModel<IPurchaseBill>("PurchaseBill", purchaseBillSchema, "purchase_bills");

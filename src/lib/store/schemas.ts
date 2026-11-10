@@ -40,6 +40,42 @@ export const StockInput = z.object({
   purchaseBillId: billId,
 });
 
+/** A quotation as the builder sends it. Prices are negotiable here (no MRP cap), lines may be custom. */
+export const QuoteInput = z.object({
+  quoteType: z.enum(BILL_TYPES).default("GST"),
+  subject: optionalText(160),
+  customer: z.object({
+    name: z.string().trim().min(1, "Customer name is required").max(120),
+    phone: optionalText(25),
+    email: z.union([z.literal(""), z.string().trim().email("Enter a valid email")]).optional().default(""),
+    address: optionalText(400),
+    gstin: z.union([z.literal(""), z.string().trim().toUpperCase().regex(/^[0-9A-Z]{15}$/, "GSTIN is 15 letters and digits")]).optional().default(""),
+    stateName: optionalText(60),
+    stateCode: z.union([z.literal(""), z.string().trim().regex(/^\d{1,2}$/, "State code is 2 digits")]).optional().default(""),
+  }),
+  customerId: z.union([z.literal(""), z.string().regex(/^[a-f\d]{24}$/i)]).optional().default(""),
+  items: z
+    .array(
+      z.object({
+        productId: z.union([z.literal(""), z.string().regex(/^[a-f\d]{24}$/i, "Unknown product")]).optional().default(""),
+        name: z.string().trim().min(1, "Every line needs a name").max(200),
+        description: optionalText(500),
+        hsn: optionalText(12),
+        unit: z.string().trim().max(12).optional().default("pcs"),
+        qty: wholeNumber("Quantity", 1),
+        unitPrice: rupees("Price"),
+        discount: rupees("Discount").optional().default(0),
+        gstRate: z.coerce.number().min(0).max(28).default(18),
+      }),
+    )
+    .min(1, "Add at least one product to the quotation")
+    .max(300),
+  validUntil: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Valid-until date looks wrong")]).optional().default(""),
+  notes: optionalText(1000),
+  terms: optionalText(2000),
+});
+export type QuoteData = z.infer<typeof QuoteInput>;
+
 /** Text fields of a purchase bill upload (sent as multipart form data along with the files). */
 export const PurchaseBillInput = z
   .object({
@@ -112,6 +148,8 @@ export const SaleInput = z.object({
   paymentMode: z.enum(PAYMENT_MODES),
   notes: optionalText(500),
   billType: z.enum(BILL_TYPES).default("PLAIN"),
+  /** Set when the bill is made from a quotation; the quotation is then marked as billed. */
+  quoteId: z.union([z.literal(""), z.string().regex(/^[a-f\d]{24}$/i)]).optional().default(""),
   /** Ship-to party; leave out when goods go to the buyer. */
   consignee: ConsigneeInput.nullable().optional().default(null),
   details: z

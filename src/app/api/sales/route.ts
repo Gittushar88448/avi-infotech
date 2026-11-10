@@ -3,6 +3,7 @@ import { fail, ok, parseJson } from "@/lib/api";
 import { handle } from "@/lib/store/errors";
 import { SaleInput } from "@/lib/store/schemas";
 import { createSale } from "@/lib/store/sales";
+import { markQuoteConverted } from "@/lib/store/quotes";
 
 export async function POST(req: Request) {
   const s = await apiSession("ADMIN");
@@ -11,6 +12,7 @@ export async function POST(req: Request) {
   if ("error" in parsed) return parsed.error;
   return handle(async () => {
     const sale = await createSale(parsed.data, s.uid);
+    if (parsed.data.quoteId) await markQuoteConverted(parsed.data.quoteId, String(sale._id));
     return ok({ id: String(sale._id), number: sale.number });
   });
 }

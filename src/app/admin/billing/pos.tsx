@@ -32,12 +32,14 @@ function StateSelect({ id, code, onChange }: { id: string; code: string; onChang
 
 export type StartCustomer = typeof EMPTY_CUSTOMER;
 
-export function PointOfSale({ categories, billSettings, startCustomer }: { categories: string[]; billSettings: BillSettingsDTO; startCustomer?: StartCustomer | null }) {
+export type FromQuote = { id: string; code: string; skipped: string[]; lines: { product: ProductDTO; qty: number; unitPrice: number; discount: number }[] };
+
+export function PointOfSale({ categories, billSettings, startCustomer, fromQuote }: { categories: string[]; billSettings: BillSettingsDTO; startCustomer?: StartCustomer | null; fromQuote?: FromQuote | null }) {
   const router = useRouter();
   const toast = useToast();
   const scanRef = useRef<HTMLInputElement>(null);
 
-  const [lines, setLines] = useState<Line[]>([]);
+  const [lines, setLines] = useState<Line[]>(() => (fromQuote?.lines ?? []).map((l, i) => ({ key: `q-${i}-${l.product.id}`, product: l.product, qty: l.qty, unitPrice: l.unitPrice, discount: l.discount })));
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<ProductDTO[]>([]);
   const [looking, setLooking] = useState(false);
@@ -165,6 +167,7 @@ export function PointOfSale({ categories, billSettings, startCustomer }: { categ
         paymentMode: payment,
         notes,
         billType,
+        quoteId: fromQuote?.id ?? "",
         consignee: shipElsewhere ? consignee : null,
         details,
       }),
@@ -181,6 +184,9 @@ export function PointOfSale({ categories, billSettings, startCustomer }: { categ
   return (
     <div className="pos">
       <div className="stack" style={{ minWidth: 0 }}>
+        {fromQuote && (
+          <div className="alert alert-info"><FileText /><span>Bill from quotation <b className="mono">{fromQuote.code}</b>. Check quantities and stock, then make the bill. The quotation will be marked as billed.{fromQuote.skipped.length > 0 && <> Not included (custom or removed items, add them separately if needed): <b>{fromQuote.skipped.join(", ")}</b>.</>}</span></div>
+        )}
         <section className="card stack">
           <div className="row between">
             <span className="card-title">Scan products</span>
@@ -248,9 +254,9 @@ export function PointOfSale({ categories, billSettings, startCustomer }: { categ
             </div>
           ) : (
             <div className="table-wrap">
-              <table className="table">
+              <table className="table pos-lines">
                 <thead>
-                  <tr><th>Product</th><th style={{ width: 120 }}>Qty</th><th style={{ width: 120 }}>Price ₹</th><th style={{ width: 110 }}>Discount ₹</th><th className="num">Amount</th><th /></tr>
+                  <tr><th>Product</th><th style={{ width: 104 }}>Qty</th><th style={{ width: 100 }}>Price ₹</th><th style={{ width: 92 }}>Discount ₹</th><th className="num">Amount</th><th /></tr>
                 </thead>
                 <tbody>
                   {lines.map((l) => {

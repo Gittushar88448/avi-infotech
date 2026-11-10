@@ -16,6 +16,8 @@ export const formatINRShort = (paise: Paise) => inrShort.format(Math.round(paise
 
 /** GST bills are INV-00001, plain bills BILL-00001 (two separate number series). */
 export const invoiceCode = (n: number, billType?: string | null) => `${billType === "PLAIN" ? "BILL" : "INV"}-${String(n).padStart(5, "0")}`;
+/** Quotations are numbered QT-00001. */
+export const quoteCode = (n: number) => `QT-${String(n).padStart(5, "0")}`;
 export const skuCode = (n: number) => `AVI-${String(n).padStart(5, "0")}`;
 
 export const PAYMENT_MODES = ["CASH", "UPI", "CARD", "BANK", "CREDIT"] as const;
