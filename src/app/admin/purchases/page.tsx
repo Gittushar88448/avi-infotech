@@ -6,6 +6,7 @@ import { formatINR } from "@/lib/store/money";
 import { HoverLetters } from "@/components/fancy-text";
 import { PurchaseBadge } from "@/components/store-ui";
 import { NewPurchaseBill } from "./purchases-client";
+import { LiveFilter } from "@/components/live-filter";
 
 export const metadata = { title: "Purchase bills" };
 export const dynamic = "force-dynamic";
@@ -43,14 +44,13 @@ export default async function PurchasesPage({ searchParams }: { searchParams: Pr
         <nav className="tabs" aria-label="Bill type">
           {TYPES.map((f) => <Link key={f.v} href={href(f.v)} className="tab" data-active={type === f.v}>{f.l}</Link>)}
         </nav>
-        <form className="row wrap" style={{ "--gap": "8px" } as React.CSSProperties}>
+        <LiveFilter className="row wrap" style={{ "--gap": "8px" } as React.CSSProperties}>
           {type && <input type="hidden" name="type" value={type} />}
           <div className="input-wrap" style={{ width: "min(300px, 100%)" }}>
             <Search className="icon-left" />
-            <input name="q" defaultValue={q} className="input" placeholder="Supplier or bill no." style={{ height: 42 }} />
+            <input name="q" defaultValue={q} className="input" type="search" placeholder="Supplier or bill no." style={{ height: 42 }} />
           </div>
-          <button className="btn">Search</button>
-        </form>
+        </LiveFilter>
       </div>
 
       {bills.length === 0 ? (

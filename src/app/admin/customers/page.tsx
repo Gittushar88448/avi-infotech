@@ -6,6 +6,7 @@ import { formatINR } from "@/lib/store/money";
 import { timeAgo } from "@/lib/format";
 import { Avatar } from "@/components/ui";
 import { HoverLetters } from "@/components/fancy-text";
+import { LiveFilter } from "@/components/live-filter";
 
 export const metadata = { title: "Customers" };
 export const dynamic = "force-dynamic";
@@ -29,10 +30,10 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
           <span className="eyebrow">Buyers</span>
           <h1 className="page-title display"><HoverLetters text="Customers" /></h1>
         </div>
-        <form className="input-wrap" style={{ width: "min(340px, 100%)" }}>
+        <LiveFilter className="input-wrap" style={{ width: "min(340px, 100%)" }}>
           <Search className="icon-left" />
-          <input name="q" defaultValue={q} className="input" placeholder="Name, phone, email or address" style={{ height: 42 }} />
-        </form>
+          <input name="q" defaultValue={q} className="input" type="search" placeholder="Name, phone, email or address" style={{ height: 42 }} />
+        </LiveFilter>
       </div>
 
       {customers.length === 0 ? (

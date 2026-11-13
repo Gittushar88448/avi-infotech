@@ -723,3 +723,7 @@ p { margin: 0; }
 .pos-lines td input.input-sm { min-width: 72px; width: 100%; }
 .pos-lines .num { white-space: nowrap; }
 .pos-lines td:first-child { min-width: 150px; } .pos-lines .row-sub { white-space: normal; overflow-wrap: anywhere; }
+/* Live filters: the search icon pulses while results load */
+form[data-pending] .icon-left { color: var(--accent); animation: live-filter-pulse 0.9s ease-in-out infinite; }
+@keyframes live-filter-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { form[data-pending] .icon-left { animation: none; } }

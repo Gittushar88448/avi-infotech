@@ -7,6 +7,7 @@ import { CountUp, HoverLetters } from "@/components/fancy-text";
 import { PurchaseBadge, StockBadge } from "@/components/store-ui";
 import { parsePurchaseType } from "@/lib/store/bill-format";
 import { AddProduct, ScanToAdd, StockButton } from "./products-client";
+import { LiveFilter } from "@/components/live-filter";
 
 export const metadata = { title: "Products & stock" };
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ const STOCK_FILTERS = [
   { v: "all", l: "All" },
   { v: "low", l: "Low stock" },
   { v: "out", l: "Out of stock" },
-  { v: "hidden", l: "Hidden" },
+  // { v: "hidden", l: "Hidden" },
 ] as const;
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ q?: string; cat?: string; stock?: string; pt?: string }> }) {
@@ -35,7 +36,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const [categories, rows, agg] = await Promise.all([
     listCategories(),
     stock === "hidden"
-      ? Product.find({ active: false, ...(pt === "LOCAL" ? { purchaseType: "LOCAL" } : pt === "GST" ? { purchaseType: { $ne: "LOCAL" } } : {}) }).sort({ name: 1 }).populate<{ category: { name: string } }>("category", "name").lean()
+      ? Product.find({ active: false, deletedAt: { $exists: false }, ...(pt === "LOCAL" ? { purchaseType: "LOCAL" } : pt === "GST" ? { purchaseType: { $ne: "LOCAL" } } : {}) }).sort({ name: 1 }).populate<{ category: { name: string } }>("category", "name").lean()
       : searchProducts(q, { categoryId: cat, purchaseType: pt || undefined, stock: stock === "low" || stock === "out" ? stock : undefined }),
     Product.aggregate<{ products: number; units: number; value: number; cost: number; low: number; out: number }>([
       { $match: { active: true, ...(pt === "LOCAL" ? { purchaseType: "LOCAL" } : pt === "GST" ? { purchaseType: { $ne: "LOCAL" } } : {}) } },
@@ -107,7 +108,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             <Link key={f.v} href={href({ pt: f.v })} className="tab" data-active={pt === f.v}>{f.l}</Link>
           ))}
         </nav>
-        <form className="row wrap" style={{ "--gap": "8px" } as React.CSSProperties}>
+        <LiveFilter className="row" style={{ "--gap": "66px", "display": "flex", "flexDirection": "row" } as React.CSSProperties}>
           {stock !== "all" && <input type="hidden" name="stock" value={stock} />}
           {pt && <input type="hidden" name="pt" value={pt} />}
           <select name="cat" defaultValue={cat} className="select" style={{ height: 42, width: 190 }} aria-label="Category">
@@ -116,10 +117,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
           </select>
           <div className="input-wrap" style={{ width: "min(300px, 100%)" }}>
             <Search className="icon-left" />
-            <input name="q" defaultValue={q} className="input" placeholder="Name, brand, model, barcode" style={{ height: 42 }} />
+            <input name="q" defaultValue={q} className="input" type="search" placeholder="Name, brand, model, barcode" style={{ height: 42 }} />
           </div>
-          <button className="btn">Filter</button>
-        </form>
+        </LiveFilter>
       </div>
 
       {products.length === 0 ? (

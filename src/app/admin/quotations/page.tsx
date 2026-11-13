@@ -6,6 +6,7 @@ import { formatINR, formatINRShort, quoteCode } from "@/lib/store/money";
 import { fmtDate } from "@/lib/format";
 import { CountUp, HoverLetters } from "@/components/fancy-text";
 import { QUOTE_STATUS_LABEL, QuoteStatusBadge } from "./status";
+import { LiveFilter } from "@/components/live-filter";
 
 export const metadata = { title: "Quotations" };
 export const dynamic = "force-dynamic";
@@ -61,14 +62,13 @@ export default async function QuotationsPage({ searchParams }: { searchParams: P
             <Link key={s} href={href(s)} className="tab" data-active={status === s}>{QUOTE_STATUS_LABEL[s]} {by[s]?.count ? <small>{by[s].count}</small> : null}</Link>
           ))}
         </nav>
-        <form className="row" style={{ "--gap": "8px" } as React.CSSProperties}>
+        <LiveFilter className="row" style={{ "--gap": "8px" } as React.CSSProperties}>
           {status && <input type="hidden" name="status" value={status} />}
           <div className="input-wrap" style={{ width: "min(320px, 100%)" }}>
             <Search className="icon-left" />
-            <input name="q" defaultValue={q} className="input" placeholder="Customer, phone, product or QT no." style={{ height: 42 }} />
+            <input name="q" defaultValue={q} className="input" type="search" placeholder="Customer, phone, product or QT no." style={{ height: 42 }} />
           </div>
-          <button className="btn">Search</button>
-        </form>
+        </LiveFilter>
       </div>
 
       {quotes.length === 0 ? (

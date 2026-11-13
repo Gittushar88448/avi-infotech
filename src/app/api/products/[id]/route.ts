@@ -3,7 +3,7 @@ import { apiSession } from "@/lib/auth";
 import { fail, ok, parseJson } from "@/lib/api";
 import { handle } from "@/lib/store/errors";
 import { ProductInput } from "@/lib/store/schemas";
-import { setProductActive, updateProduct } from "@/lib/store/products";
+import { deleteProduct, setProductActive, updateProduct } from "@/lib/store/products";
 
 const Body = z.union([z.object({ active: z.boolean() }).strict(), ProductInput]);
 
@@ -18,4 +18,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     else await setProductActive(id, data.active);
     return ok();
   });
+}
+
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await apiSession("ADMIN"))) return fail("Unauthorized", 401);
+  const { id } = await params;
+  return handle(async () => ok({ result: await deleteProduct(id) }));
 }

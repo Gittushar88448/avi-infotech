@@ -37,6 +37,8 @@ export interface IProduct {
   lowStockAt: number;
   warrantyMonths: number;
   active: boolean;
+  /** Set when an admin deletes a product that old bills or quotations still point to. */
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -235,6 +237,7 @@ const productSchema = new Schema<IProduct>(
     lowStockAt: { type: Number, default: 3, min: 0 },
     warrantyMonths: { type: Number, default: 0, min: 0 },
     active: { type: Boolean, default: true },
+    deletedAt: { type: Date },
   },
   { timestamps: true },
 );

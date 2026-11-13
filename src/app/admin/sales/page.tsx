@@ -6,6 +6,7 @@ import { formatINR, formatINRShort, invoiceCode } from "@/lib/store/money";
 import { fmtDate } from "@/lib/format";
 import { HoverLetters } from "@/components/fancy-text";
 import { SaleStatus } from "@/components/store-ui";
+import { LiveFilter } from "@/components/live-filter";
 
 export const metadata = { title: "Sales history" };
 export const dynamic = "force-dynamic";
@@ -71,10 +72,10 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
         ))}
       </div>
 
-      <form className="card row wrap" style={{ padding: 14, "--gap": "10px" } as React.CSSProperties}>
+      <LiveFilter className="card row wrap" style={{ padding: 14, "--gap": "10px" } as React.CSSProperties}>
         <div className="input-wrap grow" style={{ minWidth: 220 }}>
           <Search className="icon-left" />
-          <input name="q" defaultValue={q} className="input" placeholder="Bill no., customer, phone, product or barcode" style={{ height: 42 }} />
+          <input name="q" defaultValue={q} className="input" type="search" placeholder="Bill no., customer, phone, product or barcode" style={{ height: 42 }} />
         </div>
         <label className="row hint" style={{ "--gap": "6px" } as React.CSSProperties}>From <input type="date" name="from" defaultValue={sp.from} className="input" style={{ height: 42, width: 160 }} /></label>
         <label className="row hint" style={{ "--gap": "6px" } as React.CSSProperties}>To <input type="date" name="to" defaultValue={sp.to} className="input" style={{ height: 42, width: 160 }} /></label>
@@ -88,9 +89,8 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
           <option value="PLAIN">Bill only</option>
           <option value="GST">GST Bill only</option>
         </select>
-        <button className="btn">Apply</button>
-        {filtered && <Link href="/admin/sales" className="btn btn-ghost">Clear</Link>}
-      </form>
+        {filtered && <button type="button" data-clear className="btn btn-ghost">Clear</button>}
+      </LiveFilter>
 
       {filtered && (
         <div className="text-2" style={{ fontWeight: 650 }}>

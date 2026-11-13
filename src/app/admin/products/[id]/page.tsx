@@ -8,7 +8,7 @@ import { listCategories, productDTO } from "@/lib/store/products";
 import { formatINR, invoiceCode } from "@/lib/store/money";
 import { fmtDate } from "@/lib/format";
 import { PurchaseBadge, StockBadge } from "@/components/store-ui";
-import { EditProduct, StockButton, ToggleActive } from "../products-client";
+import { DeleteProduct, EditProduct, StockButton, ToggleActive } from "../products-client";
 
 export const dynamic = "force-dynamic";
 
@@ -81,15 +81,20 @@ export default async function ProductDetail({ params, searchParams }: { params: 
       <Link href="/admin/products" className="row muted" style={{ "--gap": "6px", fontWeight: 700, fontSize: 14 } as React.CSSProperties}><ArrowLeft style={{ width: 16 }} /> All products</Link>
       <div className="page-head">
         <div className="stack" style={{ "--gap": "8px" } as React.CSSProperties}>
-          <span className="eyebrow">{p.category}{!p.active && " · Hidden"}</span>
+          <span className="eyebrow">{p.category}{p.deleted ? " · Deleted" : !p.active && " · Hidden"}</span>
           <h1 className="page-title display">{p.name}</h1>
           <div className="row wrap"><StockBadge stock={p.stock} low={p.lowStockAt} unit={`${p.unit} in stock`} /><span className="text-2" style={{ fontSize: 14 }}>{sold.units} sold · {formatINR(sold.revenue)} revenue</span></div>
         </div>
-        <div className="row wrap">
-          {p.active && <StockButton id={p.id} name={p.name} stock={p.stock} unit={p.unit} purchaseType={p.purchaseType} className="btn btn-primary btn-sm" />}
-          <EditProduct product={p} categories={categories.map((c) => c.name)} />
-          <ToggleActive id={p.id} name={p.name} active={p.active} />
-        </div>
+        {p.deleted ? (
+          <span className="badge">Deleted · kept only for old bills</span>
+        ) : (
+          <div className="row wrap">
+            {p.active && <StockButton id={p.id} name={p.name} stock={p.stock} unit={p.unit} purchaseType={p.purchaseType} className="btn btn-primary btn-sm" />}
+            <EditProduct product={p} categories={categories.map((c) => c.name)} />
+            {!p.active && <ToggleActive id={p.id} name={p.name} active={p.active} />}
+            <DeleteProduct id={p.id} name={p.name} />
+          </div>
+        )}
       </div>
 
       <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 340px) minmax(0, 1fr)", gap: 18, alignItems: "start" }}>

@@ -33,6 +33,8 @@ Internal app for Avi Infotech, a camera and hardware company. It runs the field-
 - **Add by barcode** (`Admin → Products`): scan box after box. A new barcode opens the Add product form with the barcode filled in. A barcode already in the catalog shows the product so you can add stock, and scanning the same box again counts it +1. Pick *GST bill* or *Normal bill* for the purchase you're entering, and optionally the supplier's bill number, which is saved in the stock history. Scanning anywhere on the Products page opens this too.
 - **Stock history:** restock, customer return, damaged/lost and stock-check corrections are recorded with who, when and why, next to every sale. Each product page shows its full stock ledger and which customers bought it.
 - **Sales history** (`Admin → Sales`): every bill, searchable by bill number, customer, phone, product or barcode, with date range and today / this month totals.
+- **Delete a product** from its page. A product never billed or quoted is removed with its stock history. One used on old bills or quotations is taken out of products, billing and search for good, and its barcode can be used again; the old bills still show it.
+- **Live search and filters:** every search box and filter (Dashboard, Products, Sales, Purchase bills, Quotations, Customers) updates the list as you type or pick an option, with no Search button. The filters are kept in the page address, so a filtered list can be bookmarked or shared with staff.
 - **Customers** (`Admin → Customers`): each customer's bills and the exact products they bought, with total spent.
 
 ## Quotations
@@ -286,5 +288,5 @@ Design decisions:
 - **Stock can't oversell.** Each product's stock is taken with one conditional update (`stock >= qty`). If any line fails, the stock already taken is returned and the bill isn't saved. This works on a plain single-node MongoDB, with no replica set or transactions needed.
 - **Every stock change is a ledger row** (`stock_movements`, with the balance after the change), so the stock figure can always be explained. Sales and cancellations write their own rows; manual changes need a reason.
 - **Bills are snapshots.** Sale lines copy the product's name, barcode, HSN, MRP, price and GST, and the bill copies the customer's details. Editing a product or customer later never changes an old bill.
-- **Nothing is hard-deleted.** Products are hidden, not deleted, and bills are cancelled, not deleted, so history stays complete.
+- **History stays complete.** Bills are cancelled, not deleted. **Delete** on a product removes it completely if it was never billed or quoted; otherwise it disappears from products, billing and search, its barcode and SKU are freed for reuse, and old bills keep their own copy of it.
 - **Customers are deduplicated by phone** (last 10 digits), so "+91 98765 43210" and "098765-43210" are the same person.

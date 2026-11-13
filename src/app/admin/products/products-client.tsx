@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Barcode, CheckCircle2, PackagePlus, PackageX, Pencil, PackageCheck, Plus, X } from "lucide-react";
+import { AlertCircle, Barcode, CheckCircle2, PackagePlus, PackageX, Pencil, PackageCheck, Plus, Trash2, X } from "lucide-react";
 import { beep } from "@/components/barcode";
 import { PurchaseBadge } from "@/components/store-ui";
 import { PURCHASE_LABEL, type PurchaseType } from "@/lib/store/bill-format";
@@ -322,6 +322,21 @@ export function StockButton({ id, name, stock, unit, purchaseType = "GST", class
         </div>
       )}
     </>
+  );
+}
+
+export function DeleteProduct({ id, name }: { id: string; name: string }) {
+  return (
+    <ActionButton
+      url={`/api/products/${id}`}
+      method="DELETE"
+      className="btn btn-sm btn-danger"
+      confirm={`Delete ${name}? It will be removed from products, billing and quotations. Bills and quotations already made keep their copy of it. This can't be undone.`}
+      success="Product deleted"
+      redirectTo="/admin/products"
+    >
+      <Trash2 /> Delete
+    </ActionButton>
   );
 }
 

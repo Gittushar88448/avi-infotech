@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { STATUS_LABEL, ticketCode, timeAgo } from "@/lib/format";
 import { Avatar, Priority, StatusBadge } from "@/components/ui";
 import { CountUp, HoverLetters } from "@/components/fancy-text";
+import { LiveFilter } from "@/components/live-filter";
 
 export const dynamic = "force-dynamic";
 const FILTERS = ["ALL", "ASSIGNED", "IN_PROGRESS", "SUBMITTED", "REWORK", "COMPLETED"] as const;
@@ -81,11 +82,11 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
             </Link>
           ))}
         </nav>
-        <form className="input-wrap" style={{ width: "min(320px, 100%)" }}>
+        <LiveFilter className="input-wrap" style={{ width: "min(320px, 100%)" }}>
           <input type="hidden" name="status" value={status} />
           <Search className="icon-left" />
-          <input name="q" defaultValue={q} className="input" placeholder="Search customer, address, Q-1001" style={{ height: 42 }} />
-        </form>
+          <input name="q" defaultValue={q} className="input" type="search" placeholder="Search customer, address, Q-1001" style={{ height: 42 }} />
+        </LiveFilter>
       </div>
 
       {queries.length === 0 ? (

@@ -2,7 +2,7 @@
 // atomically and writes a ledger row, so the stock figure can always be explained.
 import "server-only";
 import { isId, nextSequence } from "../db";
-import { Category, Product, StockMovement, type IProduct, type MovementReason } from "./models";
+import { Category, Product, Quotation, Sale, StockMovement, type IProduct, type MovementReason } from "./models";
 import { skuCode } from "./money";
 import { ImportRow, type ProductData } from "./schemas";
 import { StoreError } from "./errors";
@@ -37,7 +37,7 @@ export async function findByCode(code: string) {
 export async function searchProducts(q: string, opts: { categoryId?: string; stock?: "low" | "out"; purchaseType?: PurchaseType; limit?: number; includeInactive?: boolean } = {}) {
   const rx = q.trim() ? new RegExp(escapeRx(q.trim()), "i") : null;
   const filter: Record<string, unknown> = {
-    ...(!opts.includeInactive && { active: true }),
+    ...(!opts.includeInactive ? { active: true } : { deletedAt: { $exists: false } }),
     ...(rx && { $or: [{ name: rx }, { brand: rx }, { model: rx }, { sku: rx }, { barcode: rx }] }),
     ...(opts.categoryId && isId(opts.categoryId) && { category: opts.categoryId }),
     ...(opts.purchaseType === "LOCAL" && { purchaseType: "LOCAL" }),
@@ -75,6 +75,7 @@ export function productDTO(p: Omit<IProduct, "category"> & { _id: unknown; categ
     lowStockAt: p.lowStockAt,
     warrantyMonths: p.warrantyMonths,
     active: p.active,
+    deleted: !!p.deletedAt,
   };
 }
 export type ProductDTO = ReturnType<typeof productDTO>;
@@ -104,9 +105,32 @@ export async function updateProduct(id: string, data: ProductData) {
 }
 
 /** Hides a product from billing and the catalog. Sales history keeps referring to it. */
+/**
+ * Deletes a product. A product that was never billed or quoted is removed completely, with its
+ * stock history. One that old bills or quotations still point to is taken out of the catalog,
+ * billing, search and lists for good, and its barcode and SKU are freed for a new product;
+ * the old bills keep their own copy of the name, price and barcode.
+ */
+export async function deleteProduct(id: string): Promise<"removed" | "archived"> {
+  if (!isId(id)) throw new StoreError("Product not found", 404);
+  const p = await Product.findById(id).select("sku deletedAt").lean();
+  if (!p || p.deletedAt) throw new StoreError("Product not found", 404);
+  const used = (await Sale.exists({ "items.product": id })) || (await Quotation.exists({ "items.product": id }));
+  if (!used) {
+    await Product.deleteOne({ _id: id });
+    await StockMovement.deleteMany({ product: id });
+    return "removed";
+  }
+  await Product.updateOne(
+    { _id: id },
+    { active: false, deletedAt: new Date(), sku: `${p.sku}~DEL-${Date.now().toString(36).toUpperCase()}`, $unset: { barcode: 1 } },
+  );
+  return "archived";
+}
+
 export async function setProductActive(id: string, active: boolean) {
   if (!isId(id)) throw new StoreError("Product not found", 404);
-  const res = await Product.updateOne({ _id: id }, { active });
+  const res = await Product.updateOne({ _id: id, deletedAt: { $exists: false } }, { active });
   if (!res.matchedCount) throw new StoreError("Product not found", 404);
 }
 
