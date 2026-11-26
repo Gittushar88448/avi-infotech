@@ -25,8 +25,8 @@ const REASON_LABEL: Record<string, string> = {
 type BillRef = { _id: unknown; billType: PurchaseType; supplier: string; billNo: string; billDate?: Date; files: unknown[] };
 const BILL_FILTERS = [
   { v: "", l: "All" },
-  { v: "LOCAL", l: "Normal bill" },
-  { v: "GST", l: "GST bill" },
+  { v: "LOCAL", l: "Without GST" },
+  { v: "GST", l: "GST" },
 ] as const;
 
 export default async function ProductDetail({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bill?: string }> }) {
@@ -119,7 +119,7 @@ export default async function ProductDetail({ params, searchParams }: { params: 
                 ))}
               </nav>
             </div>
-            <span className="hint" style={{ padding: "0 22px" }}>Bought on normal bills: <b>{unitsBy("LOCAL")}</b> {p.unit} · on GST bills: <b>{unitsBy("GST")}</b> {p.unit}</span>
+            <span className="hint" style={{ padding: "0 22px" }}>GST: <b>{unitsBy("GST")}</b> {p.unit} · Without GST: <b>{unitsBy("LOCAL")}</b> {p.unit}</span>
             {shownPurchases.length === 0 ? (
               <div className="empty" style={{ padding: 24 }}>{billFilter ? "No purchases on this bill type." : "No purchase bills linked yet. Attach one when you restock."}</div>
             ) : (
@@ -159,7 +159,7 @@ export default async function ProductDetail({ params, searchParams }: { params: 
                         <td>
                           {REASON_LABEL[m.reason] ?? m.reason}
                           {m.sale && <> · <Link className="link-underline mono" style={{ color: "var(--accent)" }} href={`/admin/sales/${m.sale._id}`}>{invoiceCode(m.sale.number, m.sale.billType)}</Link></>}
-                          {m.purchaseBill && <> · <Link className="link-underline" style={{ color: "var(--accent)" }} href={`/admin/purchases/${m.purchaseBill._id}`}>{m.purchaseBill.billType === "GST" ? "GST bill" : "Normal bill"}</Link></>}
+                          {m.purchaseBill && <> · <Link className="link-underline" style={{ color: "var(--accent)" }} href={`/admin/purchases/${m.purchaseBill._id}`}>{m.purchaseBill.billType === "GST" ? "GST bill" : "Without GST bill"}</Link></>}
                           {m.note && <div className="row-sub" style={{ whiteSpace: "normal" }}>{m.note}</div>}
                         </td>
                         <td className="num mono" style={{ fontWeight: 750, color: m.change > 0 ? "var(--green)" : "var(--rose)" }}>{m.change > 0 ? `+${m.change}` : m.change}</td>

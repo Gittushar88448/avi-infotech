@@ -85,9 +85,9 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
           <option value="CANCELLED">Cancelled</option>
         </select>
         <select name="type" defaultValue={type} className="select" style={{ height: 42, width: 140 }} aria-label="Bill type">
-          <option value="">Bill + GST Bill</option>
-          <option value="PLAIN">Bill only</option>
-          <option value="GST">GST Bill only</option>
+          <option value="">GST + Without GST</option>
+          <option value="GST">GST</option>
+          <option value="PLAIN">Without GST</option>
         </select>
         {filtered && <button type="button" data-clear className="btn btn-ghost">Clear</button>}
       </LiveFilter>
@@ -110,7 +110,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
             <Link key={String(s._id)} href={`/admin/sales/${s._id}`} className="list-row" style={{ gridTemplateColumns: "110px minmax(0,1fr) 90px 170px 130px 24px", "--i": Math.min(i, 12), opacity: s.status === "CANCELLED" ? 0.6 : 1 } as React.CSSProperties}>
               <span className="stack hide-sm" style={{ "--gap": "2px" } as React.CSSProperties}>
                 <span className="mono" style={{ fontWeight: 700, color: "var(--accent)" }}>{invoiceCode(s.number, s.billType)}</span>
-                <span className="muted" style={{ fontSize: 11.5, fontWeight: 700 }}>{s.billType === "PLAIN" ? "Bill" : "GST Bill"}</span>
+                <span className="muted" style={{ fontSize: 11.5, fontWeight: 700 }}>{s.billType === "PLAIN" ? "Without GST" : "GST"}</span>
               </span>
               <div className="stack" style={{ "--gap": "2px", minWidth: 0 } as React.CSSProperties}>
                 <span className="row-title">{s.customerSnapshot.name}</span>

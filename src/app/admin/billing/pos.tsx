@@ -70,9 +70,9 @@ export function PointOfSale({ categories, billSettings, startCustomer, fromQuote
   const names = (ls: Line[]) => [...new Set(ls.map((l) => l.product.name))].slice(0, 4).join(", ") + (new Set(ls.map((l) => l.product.name)).size > 4 ? "…" : "");
   function mismatch(billType: BillType) {
     if (billType === "GST" && localItems.length)
-      return `${localItems.length} item(s) on this bill were bought on a NORMAL bill (no GST):\n${names(localItems)}\n\nA GST Bill will charge GST on them. Make a GST Bill anyway?`;
+      return `${localItems.length} item(s) on this bill were bought WITHOUT GST:\n${names(localItems)}\n\nA GST bill will charge GST on them. Make a GST bill anyway?`;
     if (billType === "PLAIN" && gstItems.length)
-      return `${gstItems.length} item(s) on this bill were bought with a GST bill:\n${names(gstItems)}\n\nA plain Bill shows no GST for them. Make a plain Bill anyway?`;
+      return `${gstItems.length} item(s) on this bill were bought with GST:\n${names(gstItems)}\n\nA Without GST bill shows no GST for them. Make a Without GST bill anyway?`;
     return "";
   }
 
@@ -151,7 +151,7 @@ export function PointOfSale({ categories, billSettings, startCustomer, fromQuote
     if (lines.length === 0) return setError("Scan or add at least one product.");
     if (billType === "GST" && !seller.gstin) {
       setEditingSettings(true);
-      return setError("Add your company's GSTIN first (Edit details), then make the GST Bill.");
+      return setError("Add your company's GSTIN first (Edit details), then make the GST bill.");
     }
     if (shipElsewhere && !consignee.name.trim()) return setError("Enter the consignee's name, or untick Ship to a different address.");
     if (!walkIn && (!customer.name.trim() || customer.phone.replace(/\D/g, "").length < 10)) return setError("Enter the customer's name and 10 digit phone, or tick Walk-in.");
@@ -219,7 +219,7 @@ export function PointOfSale({ categories, billSettings, startCustomer, fromQuote
                 <button key={p.id} type="button" className="list-row pick-row" onClick={() => addProduct(p)}>
                   <div className="stack" style={{ "--gap": "2px", minWidth: 0 } as React.CSSProperties}>
                     <span className="row-title">{p.name}</span>
-                    <span className="row-sub mono">{p.barcode || p.sku} · {p.category} · {p.purchaseType === "LOCAL" ? "Normal bill purchase" : "GST bill purchase"}</span>
+                    <span className="row-sub mono">{p.barcode || p.sku} · {p.category} · {p.purchaseType === "LOCAL" ? "Bought without GST" : "Bought with GST"}</span>
                   </div>
                   <span className={`badge ${p.stock <= 0 ? "badge-REWORK" : p.stock <= p.lowStockAt ? "badge-SUBMITTED" : "badge-COMPLETED"}`}>{p.stock} in stock</span>
                   <span style={{ fontWeight: 750 }}>{formatINR(p.price)}</span>
@@ -347,7 +347,7 @@ export function PointOfSale({ categories, billSettings, startCustomer, fromQuote
         <details className="card stack bill-extra">
           <summary className="row between">
             <span className="card-title row" style={{ "--gap": "8px" } as React.CSSProperties}><Truck style={{ width: 18 }} /> Shipping & order details</span>
-            <span className="hint">optional, for GST Bill</span>
+            <span className="hint">optional, for GST bills</span>
           </summary>
           <label className="row hint" style={{ "--gap": "8px", cursor: "pointer", marginTop: 14 } as React.CSSProperties}>
             <input type="checkbox" checked={shipElsewhere} onChange={(e) => setShipElsewhere(e.target.checked)} /> Ship to a different address (Consignee)
@@ -418,22 +418,22 @@ export function PointOfSale({ categories, billSettings, startCustomer, fromQuote
           {error && <div className="alert alert-error"><AlertCircle />{error}</div>}
           {lines.length > 0 && (
             localItems.length && gstItems.length ? (
-              <div className="alert alert-warn"><AlertCircle /><span><b>Caution: mixed purchase.</b> {localItems.length} item(s) bought on a normal bill (no GST): {names(localItems)}. {gstItems.length} item(s) bought on a GST bill. Consider two bills: a <b>Bill</b> for the normal-bill items and a <b>GST Bill</b> for the rest.</span></div>
+              <div className="alert alert-warn"><AlertCircle /><span><b>Caution: mixed purchase.</b> {localItems.length} item(s) bought without GST: {names(localItems)}. {gstItems.length} item(s) bought with GST. Consider two bills: <b>Without GST</b> for the first and <b>GST</b> for the rest.</span></div>
             ) : localItems.length ? (
-              <div className="alert alert-warn"><AlertCircle /><span><b>Caution: normal bill purchase.</b> These items were bought on a normal bill without GST. Use <b>Bill</b> (no GST), not GST Bill.</span></div>
+              <div className="alert alert-warn"><AlertCircle /><span><b>Caution: bought without GST.</b> These items were bought without GST. Use <b>Without GST</b>, not GST.</span></div>
             ) : (
-              <div className="alert alert-info"><AlertCircle /><span>All items were bought on a GST bill. <b>GST Bill</b> is recommended.</span></div>
+              <div className="alert alert-info"><AlertCircle /><span>All items were bought with GST. <b>GST</b> is recommended.</span></div>
             )
           )}
           <div className="bill-buttons">
             <button type="button" className="btn btn-lg" data-suggested={suggested === "PLAIN"} disabled={busy || lines.length === 0} onClick={() => generateBill("PLAIN")} title="Prices only, no GST or licence details">
-              {busy ? <span className="spinner" /> : <><ReceiptText /> Bill</>}
+              {busy ? <span className="spinner" /> : <><ReceiptText /> Without GST</>}
             </button>
             <button type="button" className="btn btn-primary btn-lg" data-suggested={suggested === "GST"} disabled={busy || lines.length === 0} onClick={() => generateBill("GST")} title="Tax invoice with GSTIN, HSN and GST breakdown">
-              {busy ? <span className="spinner" /> : <><FileText /> GST Bill</>}
+              {busy ? <span className="spinner" /> : <><FileText /> GST</>}
             </button>
           </div>
-          <span className="hint" style={{ textAlign: "center" }}>Bill: prices only. GST Bill: tax invoice with GSTIN, HSN and GST.</span>
+          <span className="hint" style={{ textAlign: "center" }}>Without GST: prices only. GST: tax invoice with GSTIN, HSN and GST.</span>
           {lines.length > 0 && (
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => window.confirm("Clear all items from this bill?") && setLines([])}>
               Clear bill

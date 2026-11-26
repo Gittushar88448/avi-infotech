@@ -26,7 +26,7 @@ const ALIASES: Record<Field, string[]> = {
   lowStockAt: ["low stock", "low stock alert", "reorder level", "min stock"],
   warrantyMonths: ["warranty", "warranty months", "warranty (months)"],
   description: ["description", "notes", "details"],
-  purchaseType: ["purchase type", "purchase", "purchased with", "bought with", "purchase bill", "bill type", "gst or local", "gst or normal"],
+  purchaseType: ["purchase type", "purchase", "purchased with", "bought with", "purchase bill", "bill type", "gst or local", "gst or normal", "gst or without gst"],
 };
 const LABEL: Record<Field, string> = {
   name: "Name", categoryName: "Category", mrp: "MRP", price: "Selling price", costPrice: "Cost price", barcode: "Barcode", sku: "SKU",
@@ -39,7 +39,7 @@ const LOOKUP = new Map(Object.entries(ALIASES).flatMap(([f, names]) => names.map
 const TEMPLATE = [
   ["name", "category", "brand", "model", "barcode", "mrp", "selling price", "cost price", "gst", "hsn", "unit", "stock", "low stock alert", "warranty months", "purchase type", "description"],
   ["2MP HD Dome Camera", "CCTV camera", "Hikvision", "DS-2CE76D0T-ITPF", "6941264012345", 1850, 1600, 1280, 18, "85258900", "pcs", 24, 3, 24, "GST", ""],
-  ["BNC Connector (pack of 10)", "Cables & accessories", "", "", "", 150, 120, 90, 18, "85366990", "pcs", 40, 10, 0, "Normal", "No barcode: gets an AVI SKU"],
+  ["BNC Connector (pack of 10)", "Cables & accessories", "", "", "", 150, 120, 90, 18, "85366990", "pcs", 40, 10, 0, "Without GST", "No barcode: gets an AVI SKU"],
 ];
 
 type Row = { line: number; data: Record<string, string>; problems: string[] };
@@ -65,7 +65,7 @@ function check(d: Record<string, string>) {
   if (!d.mrp) p.push("MRP is missing");
   for (const f of NUMERIC) if (d[f] && Number.isNaN(Number(d[f]))) p.push(`${LABEL[f]} "${d[f]}" isn't a number`);
   if (d.barcode && /^\d+(\.\d+)?e\+?\d+$/i.test(d.barcode)) p.push("Excel changed this barcode to 6.9E+12 form. Format the barcode column as Text in Excel and export again.");
-  if (d.purchaseType && !(PURCHASE_TYPES as readonly string[]).includes(parsePurchaseType(d.purchaseType) ?? "")) p.push(`Purchase type "${d.purchaseType}" should be GST or Normal`);
+  if (d.purchaseType && !(PURCHASE_TYPES as readonly string[]).includes(parsePurchaseType(d.purchaseType) ?? "")) p.push(`Purchase type "${d.purchaseType}" should be GST or Without GST`);
   if (d.mrp && d.price && Number(d.price) > Number(d.mrp)) p.push("Selling price is more than MRP");
   return p;
 }
@@ -160,7 +160,7 @@ export function ImportProducts() {
           <button className="btn btn-sm" onClick={() => download("products-template.csv", toCsv(TEMPLATE))}><Download /> Download template</button>
         </div>
         <p className="text-2" style={{ fontSize: 14 }}>
-          One product per row. Required columns: <b>name</b>, <b>category</b> and <b>mrp</b>. Optional: barcode, sku, brand, model, selling price, cost price, gst, hsn, unit, stock, low stock alert, warranty months, purchase type (<b>GST</b> or <b>Normal</b>; blank means GST), description.
+          One product per row. Required columns: <b>name</b>, <b>category</b> and <b>mrp</b>. Optional: barcode, sku, brand, model, selling price, cost price, gst, hsn, unit, stock, low stock alert, warranty months, purchase type (<b>GST</b> or <b>Without GST</b>; blank means GST), description.
           Prices are in rupees and include GST. Leave barcode empty for items without one.
         </p>
         <p className="hint">From Excel: format the barcode column as <b>Text</b> before typing or pasting barcodes, then use File → Save As → CSV UTF-8.</p>

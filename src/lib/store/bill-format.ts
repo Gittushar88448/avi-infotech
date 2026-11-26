@@ -7,7 +7,8 @@
 
 export const BILL_TYPES = ["PLAIN", "GST"] as const;
 export type BillType = (typeof BILL_TYPES)[number];
-export const BILL_TYPE_LABEL: Record<BillType, string> = { PLAIN: "Bill", GST: "GST Bill" };
+/** One name everywhere in the app: "Without GST" and "GST". */
+export const BILL_TYPE_LABEL: Record<BillType, string> = { PLAIN: "Without GST", GST: "GST" };
 /** Bills saved before bill types existed were tax-invoice style. */
 export const billTypeOf = (t?: string | null): BillType => (t === "PLAIN" ? "PLAIN" : "GST");
 
@@ -17,8 +18,8 @@ export const billTypeOf = (t?: string | null): BillType => (t === "PLAIN" ? "PLA
  */
 export const PURCHASE_TYPES = ["GST", "LOCAL"] as const;
 export type PurchaseType = (typeof PURCHASE_TYPES)[number];
-export const PURCHASE_LABEL: Record<PurchaseType, string> = { GST: "GST bill purchase", LOCAL: "Normal bill purchase (no GST)" };
-export const PURCHASE_SHORT: Record<PurchaseType, string> = { GST: "GST bill", LOCAL: "Normal bill" };
+export const PURCHASE_LABEL: Record<PurchaseType, string> = { GST: "GST", LOCAL: "Without GST" };
+export const PURCHASE_SHORT = PURCHASE_LABEL;
 /** Products saved before this field existed count as GST purchases. */
 export const purchaseTypeOf = (t?: string | null): PurchaseType => (t === "LOCAL" ? "LOCAL" : "GST");
 /** Reads CSV / form spellings: "gst", "GST bill", "local", "non gst", "without gst", "kaccha"... */

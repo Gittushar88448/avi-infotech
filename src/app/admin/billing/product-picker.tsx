@@ -57,9 +57,9 @@ export function ProductPicker({ inBill, onAdd, onClose, ignoreStock = false, act
             {categories.map((c) => <option key={c}>{c}</option>)}
           </select>
           <select className="select" value={pt} onChange={(e) => setPt(e.target.value)} style={{ width: 190 }} aria-label="Purchase type">
-            <option value="">GST and normal bill</option>
-            <option value="GST">GST bill only</option>
-            <option value="LOCAL">Normal bill only</option>
+            <option value="">GST + Without GST</option>
+            <option value="GST">GST</option>
+            <option value="LOCAL">Without GST</option>
           </select>
         </div>
 

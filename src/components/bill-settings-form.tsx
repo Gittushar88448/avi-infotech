@@ -55,7 +55,7 @@ export function BillSettingsForm({ initial, onSaved, onCancel }: { initial: Bill
       </section>
 
       <section className="stack">
-        <span className="card-title">GST and licences <span className="muted" style={{ fontWeight: 600, fontSize: 13 }}>(printed on GST bills)</span></span>
+        <span className="card-title">GST and licences <span className="muted" style={{ fontWeight: 600, fontSize: 13 }}>(printed on GST bills only)</span></span>
         <div className="grid-2">
           <div className="field">
             <label className="label" htmlFor="bs-gstin">GSTIN/UIN</label>
@@ -119,19 +119,19 @@ export function BillSettingsForm({ initial, onSaved, onCancel }: { initial: Bill
         <span className="card-title">What to print on each bill</span>
         <div className="table-wrap" style={{ border: "1px solid var(--border)", borderRadius: 14 }}>
           <table className="table">
-            <thead><tr><th>Section</th><th style={{ textAlign: "center", width: 90 }}>Bill</th><th style={{ textAlign: "center", width: 90 }}>GST Bill</th></tr></thead>
+            <thead><tr><th>Section</th><th style={{ textAlign: "center", width: 110 }}>Without GST</th><th style={{ textAlign: "center", width: 90 }}>GST</th></tr></thead>
             <tbody>
               {SECTIONS.map((s) => (
                 <tr key={s.key}>
                   <td>{s.label}</td>
                   <td style={{ textAlign: "center" }}><input type="checkbox" aria-label={`${s.label} on Bill`} checked={plain.includes(s.key)} onChange={() => toggle(plain, setPlain, s.key)} /></td>
-                  <td style={{ textAlign: "center" }}><input type="checkbox" aria-label={`${s.label} on GST Bill`} checked={gst.includes(s.key)} onChange={() => toggle(gst, setGst, s.key)} /></td>
+                  <td style={{ textAlign: "center" }}><input type="checkbox" aria-label={`${s.label} on GST bill`} checked={gst.includes(s.key)} onChange={() => toggle(gst, setGst, s.key)} /></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <span className="hint">A GST Bill always shows the tax breakdown. A plain Bill never shows tax. Changes apply to new bills; bills already made keep the details they were printed with.</span>
+        <span className="hint">A GST bill always shows the tax breakdown. A Without GST bill never shows tax. Changes apply to new bills; bills already made keep the details they were printed with.</span>
       </section>
 
       {error && <div className="alert alert-error"><AlertCircle />{error}</div>}

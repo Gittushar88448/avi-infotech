@@ -13,8 +13,8 @@ export const dynamic = "force-dynamic";
 
 const TYPES = [
   { v: "", l: "All bills" },
-  { v: "LOCAL", l: "Normal bill" },
-  { v: "GST", l: "GST bill" },
+  { v: "LOCAL", l: "Without GST" },
+  { v: "GST", l: "GST" },
 ] as const;
 
 export default async function PurchasesPage({ searchParams }: { searchParams: Promise<{ q?: string; type?: string }> }) {
@@ -35,7 +35,7 @@ export default async function PurchasesPage({ searchParams }: { searchParams: Pr
         <div className="stack" style={{ "--gap": "6px" } as React.CSSProperties}>
           <span className="eyebrow">Inventory</span>
           <h1 className="page-title display"><HoverLetters text="Purchase bills" /></h1>
-          <span className="text-2">Every supplier bill for stock you bought, normal or GST, with a photo or PDF of the paper bill.</span>
+          <span className="text-2">Every supplier bill for stock you bought, GST or Without GST, with a photo or PDF of the paper bill.</span>
         </div>
         <NewPurchaseBill />
       </div>

@@ -4,7 +4,7 @@ import { PURCHASE_LABEL, PURCHASE_SHORT, purchaseTypeOf } from "@/lib/store/bill
 /** How the product was bought: GST bill or normal bill without GST. */
 export function PurchaseBadge({ type, long = false }: { type?: string; long?: boolean }) {
   const t = purchaseTypeOf(type);
-  return <span className={`badge badge-${t}`} title={PURCHASE_LABEL[t]}>{long ? PURCHASE_LABEL[t] : PURCHASE_SHORT[t]}</span>;
+  return <span className={`badge badge-${t}`} title={t === "GST" ? "Bought with a GST bill" : "Bought without GST"}>{long ? PURCHASE_LABEL[t] : PURCHASE_SHORT[t]}</span>;
 }
 
 export function StockBadge({ stock, low, unit = "" }: { stock: number; low: number; unit?: string }) {

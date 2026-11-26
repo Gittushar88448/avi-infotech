@@ -64,7 +64,7 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
           <PrintButton />
         </div>
       </div>
-      {isNew && !cancelled && <div className="alert alert-success no-print"><CheckCircle2 /> {BILL_TYPE_LABEL[billType]} {code} saved and stock updated.</div>}
+      {isNew && !cancelled && <div className="alert alert-success no-print"><CheckCircle2 /> {BILL_TYPE_LABEL[billType]} bill {code} saved and stock updated.</div>}
       {cancelled && (
         <div className="alert alert-error no-print">
           Cancelled {sale.cancelledAt && new Date(sale.cancelledAt).toLocaleString("en-IN")} by {sale.cancelledBy?.name ?? "admin"}: {sale.cancelReason}. Items were returned to stock.

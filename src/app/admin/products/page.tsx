@@ -14,15 +14,15 @@ export const dynamic = "force-dynamic";
 
 const PURCHASE_FILTERS = [
   { v: "", l: "All bills" },
-  { v: "GST", l: "GST bill" },
-  { v: "LOCAL", l: "Normal bill" },
+  { v: "GST", l: "GST" },
+  { v: "LOCAL", l: "Without GST" },
 ] as const;
 
 const STOCK_FILTERS = [
   { v: "all", l: "All" },
   { v: "low", l: "Low stock" },
   { v: "out", l: "Out of stock" },
-  // { v: "hidden", l: "Hidden" },
+  { v: "hidden", l: "Hidden" },
 ] as const;
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ q?: string; cat?: string; stock?: string; pt?: string }> }) {
@@ -108,7 +108,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             <Link key={f.v} href={href({ pt: f.v })} className="tab" data-active={pt === f.v}>{f.l}</Link>
           ))}
         </nav>
-        <LiveFilter className="row" style={{ "--gap": "66px", "display": "flex", "flexDirection": "row" } as React.CSSProperties}>
+        <LiveFilter className="row wrap" style={{ "--gap": "8px" } as React.CSSProperties}>
           {stock !== "all" && <input type="hidden" name="stock" value={stock} />}
           {pt && <input type="hidden" name="pt" value={pt} />}
           <select name="cat" defaultValue={cat} className="select" style={{ height: 42, width: 190 }} aria-label="Category">

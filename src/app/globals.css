@@ -669,6 +669,16 @@ p { margin: 0; }
   .invoice-sheet { padding: 0 !important; box-shadow: none !important; border-radius: 0; overflow: visible; }
   .tax-invoice { min-width: 0; }
   .ti-items tr, .ti-hsn tr { break-inside: avoid; }
+  /* Fill the whole A4 sheet like a Tally bill: the items table stretches (its blank spacer row
+     takes the extra height, keeping the column lines) and the totals, words, bank details and
+     signature sit at the bottom of the page. 273mm = 297mm page minus the 12mm margins. */
+  .tax-invoice { display: flex; flex-direction: column; min-height: 272mm; font-size: 13px; }
+  .ti-title { font-size: 16px; }
+  .ti-frame { flex: 1; display: flex; flex-direction: column; }
+  .ti-frame > .ti-items { flex: 1 0 auto; }
+  .ti-items tbody tr { height: 1px; }
+  .ti-items tbody tr.ti-spacer { height: auto; }
+  .ti-items .ti-spacer td { height: auto; }
 }
 .ti-cell > .ti-sign:first-child { border-top: 0; margin-top: -5px; }
 

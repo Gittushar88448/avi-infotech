@@ -404,8 +404,8 @@ export function QuoteBuilder({ initial, defaultTerms, sellerStateCode, startCust
           <div className="field">
             <span className="label">Quotation type</span>
             <div className="tabs" role="radiogroup">
-              <button type="button" className="tab" role="radio" aria-checked={!gst} data-active={!gst} style={{ border: 0, cursor: "pointer" }} onClick={() => setQuoteType("PLAIN")}><ReceiptText style={{ width: 15 }} /> Simple</button>
-              <button type="button" className="tab" role="radio" aria-checked={gst} data-active={gst} style={{ border: 0, cursor: "pointer" }} onClick={() => setQuoteType("GST")}><FileText style={{ width: 15 }} /> With GST details</button>
+              <button type="button" className="tab" role="radio" aria-checked={!gst} data-active={!gst} style={{ border: 0, cursor: "pointer" }} onClick={() => setQuoteType("PLAIN")}><ReceiptText style={{ width: 15 }} /> Without GST</button>
+              <button type="button" className="tab" role="radio" aria-checked={gst} data-active={gst} style={{ border: 0, cursor: "pointer" }} onClick={() => setQuoteType("GST")}><FileText style={{ width: 15 }} /> GST</button>
             </div>
             <span className="hint">{gst ? "Shows your GSTIN, HSN codes and the GST breakdown." : "Prices only, GST included."}</span>
           </div>

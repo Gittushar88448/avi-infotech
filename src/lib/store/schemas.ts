@@ -79,7 +79,7 @@ export type QuoteData = z.infer<typeof QuoteInput>;
 /** Text fields of a purchase bill upload (sent as multipart form data along with the files). */
 export const PurchaseBillInput = z
   .object({
-    billType: z.preprocess(parsePurchaseType, z.enum(PURCHASE_TYPES, { errorMap: () => ({ message: "Choose Normal bill or GST bill" }) })),
+    billType: z.preprocess(parsePurchaseType, z.enum(PURCHASE_TYPES, { errorMap: () => ({ message: "Choose GST or Without GST" }) })),
     supplier: optionalText(120),
     billNo: optionalText(60),
     billDate: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Bill date looks wrong")]).optional().default(""),

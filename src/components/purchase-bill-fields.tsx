@@ -7,7 +7,7 @@ import { formatINR } from "@/lib/store/money";
 import type { PurchaseBillDTO } from "@/lib/store/purchase-bills";
 
 /**
- * The supplier's bill for stock being added: Normal bill (no GST) or GST bill, with supplier,
+ * The supplier's bill for stock being added: GST or Without GST, with supplier,
  * bill number, date, amount and photos/PDFs of the paper bill. Either a new bill, or one entered
  * earlier (when several products came on the same bill).
  */
@@ -35,7 +35,7 @@ export const emptyBill = (billType: PurchaseType = "GST"): BillDraft => ({
   files: [],
 });
 
-const TYPE_TEXT: Record<PurchaseType, string> = { LOCAL: "Normal bill (no GST)", GST: "GST bill" };
+const TYPE_TEXT: Record<PurchaseType, string> = { LOCAL: "Without GST", GST: "GST" };
 
 /** True when a new bill has something worth saving. */
 export const billHasDetails = (d: BillDraft) => d.mode === "existing" ? !!d.existingId : !!(d.supplier.trim() || d.billNo.trim() || d.files.length);
@@ -114,7 +114,7 @@ export function PurchaseBillFields({ value, onChange, title = "Purchase bill" }:
               ))}
             </select>
           )}
-          {recent && recent.filter((b) => b.billType === value.billType).length === 0 && <span className="hint">No {TYPE_TEXT[value.billType].toLowerCase()} entered yet.</span>}
+          {recent && recent.filter((b) => b.billType === value.billType).length === 0 && <span className="hint">No {TYPE_TEXT[value.billType]} purchase bill entered yet.</span>}
         </div>
       ) : (
         <>

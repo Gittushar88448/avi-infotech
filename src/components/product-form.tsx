@@ -140,7 +140,7 @@ export function ProductFormDialog({
               </label>
             ))}
           </div>
-          <span className="hint">GST bill: the supplier gave a GST bill. Normal bill: bought on a bill without GST. Billing warns if you put a normal-bill item on a GST Bill.</span>
+          <span className="hint">GST: the supplier gave a GST bill. Without GST: bought on a bill without GST. Billing warns if you put a Without GST item on a GST bill.</span>
         </fieldset>}
         <div className="grid-3">
           <div className="field">
@@ -175,7 +175,7 @@ export function ProductFormDialog({
         </div>
         {!editing && (
           <>
-            <PurchaseBillFields value={bill} onChange={(d) => { setBill(d); setSavedBillId(null); }} title="Purchase bill (Normal or GST)" />
+            <PurchaseBillFields value={bill} onChange={(d) => { setBill(d); setSavedBillId(null); }} title="Purchase bill (GST or Without GST)" />
             {savedBillId && <span className="hint">The purchase bill is saved. Fix the error above and save again.</span>}
           </>
         )}

@@ -10,9 +10,8 @@ export function PublicNav() {
         <nav className="row" style={{ "--gap": "6px" } as React.CSSProperties}>
           <Link href="/reviews" className="btn btn-ghost btn-sm">Reviews</Link>
           <ThemeToggle />
-          {
-            
-          }
+          <Link href="/signup" className="btn btn-ghost btn-sm hide-sm-inline">Sign up</Link>
+          <Link href="/login" className="btn btn-primary btn-sm">Sign in</Link>
         </nav>
       </div>
     </header>

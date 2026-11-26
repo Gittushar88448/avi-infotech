@@ -146,7 +146,7 @@ export function ScanToAdd({ categories }: { categories: string[] }) {
             <span className="text-2">Scan each box. New barcodes open the product form; known ones add stock. Scan the same box again to count it.</span>
 
             {billId ? (
-              <div className="alert alert-info"><CheckCircle2 /><span>Everything you scan now goes on this <b>{bill.billType === "GST" ? "GST bill" : "normal bill"}</b>{bill.mode === "new" && (bill.supplier || bill.billNo) ? ` (${[bill.supplier, bill.billNo && `bill ${bill.billNo}`].filter(Boolean).join(", ")})` : ""}. <button type="button" className="link-underline" style={{ border: 0, background: "none", padding: 0, color: "inherit", font: "inherit", cursor: "pointer", fontWeight: 700 }} onClick={() => { setBillId(null); setBill(emptyBill(bill.billType)); }}>Start another bill</button></span></div>
+              <div className="alert alert-info"><CheckCircle2 /><span>Everything you scan now goes on this <b>{bill.billType === "GST" ? "GST" : "Without GST"} bill</b>{bill.mode === "new" && (bill.supplier || bill.billNo) ? ` (${[bill.supplier, bill.billNo && `bill ${bill.billNo}`].filter(Boolean).join(", ")})` : ""}. <button type="button" className="link-underline" style={{ border: 0, background: "none", padding: 0, color: "inherit", font: "inherit", cursor: "pointer", fontWeight: 700 }} onClick={() => { setBillId(null); setBill(emptyBill(bill.billType)); }}>Start another bill</button></span></div>
             ) : (
               <PurchaseBillFields value={bill} onChange={setBill} title="Purchase bill for these boxes" />
             )}
@@ -167,7 +167,7 @@ export function ScanToAdd({ categories }: { categories: string[] }) {
                   <PurchaseBadge type={found.product.purchaseType} long />
                 </div>
                 {found.product.purchaseType !== purchase && (
-                  <div className="alert alert-warn"><AlertCircle /><span>This product is saved as <b>{PURCHASE_LABEL[found.product.purchaseType]}</b>, but this purchase is on a <b>{purchase === "GST" ? "GST bill" : "local bill"}</b>. Edit the product if that has changed.</span></div>
+                  <div className="alert alert-warn"><AlertCircle /><span>This product is saved as <b>{PURCHASE_LABEL[found.product.purchaseType]}</b>, but this purchase is <b>{purchase === "GST" ? "GST" : "Without GST"}</b>. Edit the product if that has changed.</span></div>
                 )}
                 <div className="row wrap" style={{ "--gap": "8px" } as React.CSSProperties}>
                   <label className="label" htmlFor="scan-qty" style={{ margin: 0 }}>Add to stock</label>
@@ -311,7 +311,7 @@ export function StockButton({ id, name, stock, unit, purchaseType = "GST", class
               <label className="label" htmlFor="s-note">Note <span className="muted">(optional)</span></label>
               <input id="s-note" className="input" value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} />
             </div>
-            {reason.v === "RESTOCK" && <PurchaseBillFields value={bill} onChange={setBill} title="Supplier's bill (Normal or GST)" />}
+            {reason.v === "RESTOCK" && <PurchaseBillFields value={bill} onChange={setBill} title="Supplier's bill (GST or Without GST)" />}
             {change !== 0 && <div className="alert alert-info">Stock will go from {stock} to <b>{stock + change}</b>.</div>}
             {error && <div className="alert alert-error"><AlertCircle />{error}</div>}
             <div className="row" style={{ justifyContent: "flex-end" }}>
