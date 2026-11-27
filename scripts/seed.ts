@@ -9,6 +9,7 @@ import { BillSettings, Category, Customer, Product, PurchaseBill, Quotation, Sal
 import { skuCode, toPaise } from "../src/lib/store/money";
 
 const demo = process.argv.includes("--demo");
+const resetAdmin = process.argv.includes("--reset-admin");
 
 async function user(name: string, email: string, role: "ADMIN" | "TECHNICIAN", password: string, phone?: string) {
   const existing = await User.findOne({ email });
@@ -23,8 +24,23 @@ async function main() {
 
   const adminEmail = (process.env.SEED_ADMIN_EMAIL || "admin@aviinfotech.local").toLowerCase();
   const adminPassword = process.env.SEED_ADMIN_PASSWORD || "Admin@12345";
+  const existingAdmin = await User.findOne({ email: adminEmail });
   const admin = await user("Admin", adminEmail, "ADMIN", adminPassword);
-  console.log(`Admin: ${adminEmail} / ${adminPassword}`);
+  if (!existingAdmin) {
+    console.log(`Admin created: ${adminEmail} / ${adminPassword}`);
+  } else if (resetAdmin) {
+    // Makes the admin sign-in match .env again, and re-enables the account if it was disabled.
+    await User.updateOne(
+      { _id: admin._id },
+      { passwordHash: await bcrypt.hash(adminPassword, 10), role: "ADMIN", active: true, pendingApproval: false, $inc: { sessionVersion: 1 } },
+    );
+    console.log(`Admin password reset: ${adminEmail} / ${adminPassword}`);
+  } else if (!(await bcrypt.compare(adminPassword, existingAdmin.passwordHash))) {
+    console.log(`Admin ${adminEmail} already exists with a different password (it was set earlier and is kept).`);
+    console.log("To make it match SEED_ADMIN_PASSWORD in .env, run: npm run reset-admin  (Docker: docker compose run --rm setup npm run reset-admin)");
+  } else {
+    console.log(`Admin: ${adminEmail} / ${adminPassword}`);
+  }
 
   if (demo) {
     const techs = [

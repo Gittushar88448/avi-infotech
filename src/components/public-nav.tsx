@@ -1,8 +1,15 @@
 import Link from "next/link";
 import { Logo } from "./ui";
 import { ThemeToggle } from "./theme-toggle";
+import { getSession } from "@/lib/auth";
+import { LayoutDashboard } from "lucide-react";
 
-export function PublicNav() {
+/** Where a signed-in user's dashboard is. */
+export const homeFor = (role: string) => (role === "ADMIN" ? "/admin" : "/tech");
+
+export async function PublicNav() {
+  // Signed in: show only Dashboard. Signed out: Sign up and Sign in.
+  const session = await getSession().catch(() => null);
   return (
     <header className="public-nav">
       <div className="container">
@@ -10,8 +17,14 @@ export function PublicNav() {
         <nav className="row" style={{ "--gap": "6px" } as React.CSSProperties}>
           <Link href="/reviews" className="btn btn-ghost btn-sm">Reviews</Link>
           <ThemeToggle />
-          <Link href="/signup" className="btn btn-ghost btn-sm hide-sm-inline">Sign up</Link>
-          <Link href="/login" className="btn btn-primary btn-sm">Sign in</Link>
+          {session ? (
+            <Link href={homeFor(session.role)} className="btn btn-primary btn-sm"><LayoutDashboard /> Dashboard</Link>
+          ) : (
+            <>
+              <Link href="/signup" className="btn btn-ghost btn-sm hide-sm-inline">Sign up</Link>
+              <Link href="/login" className="btn btn-primary btn-sm">Sign in</Link>
+            </>
+          )}
         </nav>
       </div>
     </header>

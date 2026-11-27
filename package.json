@@ -8,6 +8,7 @@
     "setup": "tsx scripts/seed.ts",
     "seed": "tsx scripts/seed.ts",
     "seed:demo": "tsx scripts/seed.ts --demo",
+    "reset-admin": "tsx scripts/seed.ts --reset-admin",
     "typecheck": "tsc --noEmit",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down",

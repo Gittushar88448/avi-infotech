@@ -139,7 +139,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                 <th className="hide-sm">Bought with</th>
                 <th className="num">MRP</th>
                 <th className="num hide-sm">Selling</th>
-                <th>Stock</th>
+                <th className="hide-xs">Stock</th>
                 <th className="hide-sm" />
               </tr>
             </thead>
@@ -150,6 +150,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                     <Link href={`/admin/products/${p.id}`} className="stack" style={{ "--gap": "2px" } as React.CSSProperties}>
                       <span className="row-title" style={{ whiteSpace: "normal" }}>{p.name}</span>
                       <span className="row-sub">{[p.brand, p.model].filter(Boolean).join(" · ") || " "}</span>
+                      <span className="show-xs row wrap" style={{ "--gap": "6px", marginTop: 4 } as React.CSSProperties}><StockBadge stock={p.stock} low={p.lowStockAt} unit={p.unit} /><PurchaseBadge type={p.purchaseType} /></span>
                     </Link>
                   </td>
                   <td className="hide-sm mono" style={{ fontSize: 13 }}>{p.barcode || <span className="muted">{p.sku}</span>}</td>
@@ -157,7 +158,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
                   <td className="hide-sm"><PurchaseBadge type={p.purchaseType} /></td>
                   <td className="num">{formatINR(p.mrp)}</td>
                   <td className="num hide-sm">{formatINR(p.price)}</td>
-                  <td><StockBadge stock={p.stock} low={p.lowStockAt} unit={p.unit} /></td>
+                  <td className="hide-xs"><StockBadge stock={p.stock} low={p.lowStockAt} unit={p.unit} /></td>
                   <td className="hide-sm">
                     <div className="row" style={{ "--gap": "6px", justifyContent: "flex-end" } as React.CSSProperties}>
                       {p.active && <StockButton id={p.id} name={p.name} stock={p.stock} unit={p.unit} purchaseType={p.purchaseType} className="btn btn-sm btn-ghost" />}

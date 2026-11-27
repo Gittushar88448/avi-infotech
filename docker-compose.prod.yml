@@ -1,0 +1,10 @@
+# Production on a server: use the images built by GitHub Actions instead of building here.
+#   APP_IMAGE=ghcr.io/<you>/<repo> SETUP_IMAGE=ghcr.io/<you>/<repo>-setup \
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build
+services:
+  setup:
+    image: ${SETUP_IMAGE:?Set SETUP_IMAGE}:latest
+    pull_policy: always
+  app:
+    image: ${APP_IMAGE:?Set APP_IMAGE}:latest
+    pull_policy: always

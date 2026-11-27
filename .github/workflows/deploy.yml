@@ -1,0 +1,115 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  APP_IMAGE: ghcr.io/${{ github.repository }}
+  SETUP_IMAGE: ghcr.io/${{ github.repository }}-setup
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install and check
+        run: |
+          npm ci
+          npm run typecheck
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lower-case image names (GHCR needs lower case)
+        run: |
+          echo "APP_IMAGE=${APP_IMAGE,,}" >> "$GITHUB_ENV"
+          echo "SETUP_IMAGE=${SETUP_IMAGE,,}" >> "$GITHUB_ENV"
+
+      - name: Build and push app image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runner
+          push: true
+          tags: ${{ env.APP_IMAGE }}:latest,${{ env.APP_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=runner
+          cache-to: type=gha,mode=max,scope=runner
+
+      - name: Build and push setup image (database indexes and first admin)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: builder
+          push: true
+          tags: ${{ env.SETUP_IMAGE }}:latest,${{ env.SETUP_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=builder
+          cache-to: type=gha,mode=max,scope=builder
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # Turned on by the repository variable DEPLOY_ENABLED=true. Until then the workflow only builds.
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lower-case image names
+        run: |
+          echo "APP_IMAGE=${APP_IMAGE,,}" >> "$GITHUB_ENV"
+          echo "SETUP_IMAGE=${SETUP_IMAGE,,}" >> "$GITHUB_ENV"
+
+      - name: Copy compose files to the server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          source: docker-compose.yml,docker-compose.prod.yml
+          target: ${{ secrets.SERVER_APP_DIR || 'avi-infotech' }}
+
+      - name: Pull the new images and restart
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_IMAGE: ${{ env.APP_IMAGE }}
+          SETUP_IMAGE: ${{ env.SETUP_IMAGE }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_DIR: ${{ secrets.SERVER_APP_DIR || 'avi-infotech' }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          envs: APP_IMAGE,SETUP_IMAGE,GHCR_USER,GHCR_TOKEN,APP_DIR
+          script: |
+            set -e
+            cd "$APP_DIR"
+            test -f .env || { echo "Create .env on the server first (copy .env.example and set AUTH_SECRET)"; exit 1; }
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            export APP_IMAGE SETUP_IMAGE
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull app setup
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build --remove-orphans
+            docker image prune -f
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml ps

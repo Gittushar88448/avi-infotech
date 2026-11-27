@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowRight, BellRing, Camera, ShieldCheck, Star, Users } from "lucide-react";
 import { Query, Review } from "@/lib/db";
-import { PublicFooter, PublicNav } from "@/components/public-nav";
+import { PublicFooter, PublicNav, homeFor } from "@/components/public-nav";
+import { getSession } from "@/lib/auth";
 import { CountUp, HoverLetters, Rotator, SplitReveal } from "@/components/fancy-text";
 import { Stars } from "@/components/ui";
 
@@ -15,6 +16,7 @@ const FEATURES = [
 ];
 
 export default async function Home() {
+  const session = await getSession().catch(() => null);
   const [aggRows, completed, latest] = await Promise.all([
     Review.aggregate<{ avg: number; n: number }>([{ $match: { published: true } }, { $group: { _id: null, avg: { $avg: "$rating" }, n: { $sum: 1 } } }]),
     Query.countDocuments({ status: "COMPLETED" }),
@@ -39,7 +41,7 @@ export default async function Home() {
             One place for your team to receive customer queries, fix them on site, and close the loop with a verified report and a review.
           </p>
           <div className="row wrap" style={{ justifyContent: "center" }}>
-            <Link href="/login" className="btn btn-primary btn-lg">Open the desk <ArrowRight /></Link>
+            <Link href={session ? homeFor(session.role) : "/login"} className="btn btn-primary btn-lg">{session ? "Go to dashboard" : "Open the desk"} <ArrowRight /></Link>
             <Link href="/reviews" className="btn btn-lg"><Star /> Read reviews</Link>
           </div>
         </section>

@@ -35,6 +35,8 @@ Internal app for Avi Infotech, a camera and hardware company. It runs the field-
 - **Stock history:** restock, customer return, damaged/lost and stock-check corrections are recorded with who, when and why, next to every sale. Each product page shows its full stock ledger and which customers bought it.
 - **Sales history** (`Admin → Sales`): every bill, searchable by bill number, customer, phone, product or barcode, with date range and today / this month totals.
 - **Delete a product** from its page. A product never billed or quoted is removed with its stock history. One used on old bills or quotations is taken out of products, billing and search for good, and its barcode can be used again; the old bills still show it.
+- **Phones:** every page works at phone width. Admins get a bottom bar with Dashboard, Billing, Quotations, Products and **More** (all other pages). Bills shrink to fit the screen; tables put the key details first.
+- **Signed in:** the public pages show only a **Dashboard** button instead of Sign in / Sign up.
 - **Live search and filters:** every search box and filter (Dashboard, Products, Sales, Purchase bills, Quotations, Customers) updates the list as you type or pick an option, with no Search button. The filters are kept in the page address, so a filtered list can be bookmarked or shared with staff.
 - **Customers** (`Admin → Customers`): each customer's bills and the exact products they bought, with total spent.
 
@@ -170,6 +172,18 @@ Notes:
 - **Older CPU:** if the `mongo` container keeps restarting with an AVX message, set `MONGO_VERSION=4.4` in `.env`.
 - **Port in use:** change `APP_PORT` in `.env`.
 - Image only: `docker build -t avi-infotech .` then `docker run -p 3000:3000 --env-file .env avi-infotech` (with your own `MONGODB_URI`).
+
+## Deploy with GitHub Actions
+
+GitHub Pages can't run this app (it needs a server for MongoDB, logins and the API). Instead, `.github/workflows/deploy.yml` builds the Docker images on every push to `main`, stores them in the repo's Packages (ghcr.io) and restarts the app on your own server over SSH.
+
+1. On a Linux server with Docker: `mkdir ~/avi-infotech`, and put a `.env` there (copy `.env.example`; set `AUTH_SECRET`, `SEED_ADMIN_PASSWORD`, `APP_URL`).
+2. In GitHub → Settings → Secrets and variables → Actions, add secrets `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY` (optional `SERVER_PORT`, `SERVER_APP_DIR`), and the variable `DEPLOY_ENABLED` = `true`.
+3. Push to `main`. Without `DEPLOY_ENABLED` the workflow only builds and checks.
+
+On the server the app runs with `docker-compose.yml` plus `docker-compose.prod.yml`, which uses the ready-made images instead of building.
+
+**Admin login doesn't work?** Seeding never changes an existing admin's password. Run `npm run reset-admin` (Docker: `docker compose run --rm setup npm run reset-admin`) to set it to `SEED_ADMIN_PASSWORD` from `.env`.
 
 ## MongoDB
 
